@@ -47,8 +47,9 @@ test("finalize 接續既有 task 編號", () => {
   const root = setup();
   runDraftCreate(root, { json: JSON.stringify({ source: "a", items: [{ title: "X", type: "fix" }] }) });
   runFinalize(root, "D-001", {});
+  // 上一個 draft 已被消耗刪除，依「從磁碟推導」原則新 draft 重新取得 D-001
   runDraftCreate(root, { json: JSON.stringify({ source: "b", items: [{ title: "Y", type: "fix" }] }) });
-  runFinalize(root, "D-002", {});
+  runFinalize(root, "D-001", {});
   expect(listTaskIds(root)).toEqual(["T-001", "T-002"]);
 });
 

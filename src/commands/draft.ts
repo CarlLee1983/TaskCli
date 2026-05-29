@@ -1,5 +1,5 @@
 import { writeDraft, readDraft, listDraftIds, parseDraft } from "../storage/drafts";
-import { bumpCounter } from "../storage/counter";
+import { nextId } from "../storage/ids";
 import { nowIso } from "../model/clock";
 import type { Draft, DraftItem } from "../model/types";
 
@@ -32,7 +32,7 @@ export function runDraftCreate(root: string, opts: DraftCreateOpts): string {
   } catch {
     throw new Error("draft 內容非合法 JSON");
   }
-  const id = bumpCounter(root, "D");
+  const id = nextId("D", listDraftIds(root));
   const now = (opts.now ?? nowIso)();
   const validated = parseDraft({ ...(withItemDefaults(data) as object), id, createdAt: now });
   const draft: Draft = { ...validated, id, createdAt: now };
