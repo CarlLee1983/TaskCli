@@ -20,7 +20,8 @@ const USAGE = `usage: taskcli <command> [options]
   finalize <draft-id>                 draft 生成正式 task
   list [--type --status --priority --tag --json]   列出 task
   show <id> [--json]                  顯示 task
-  update <id> [--title --type --status --priority --add-tag --rm-tag]
+  update <id> [--title --type --status --priority --add-tag --rm-tag
+              --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]
   done <id>                           標記完成
   rm <id>                             刪除 task
   install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
@@ -140,6 +141,8 @@ async function main(): Promise<void> {
           options: {
             title: { type: "string" }, type: { type: "string" }, status: { type: "string" },
             priority: { type: "string" }, "add-tag": { type: "string" }, "rm-tag": { type: "string" },
+            due: { type: "string" }, assignee: { type: "string" }, estimate: { type: "string" },
+            "add-dep": { type: "string" }, "rm-dep": { type: "string" },
           },
           allowPositionals: true,
         });
@@ -148,6 +151,8 @@ async function main(): Promise<void> {
         process.stdout.write(`${runUpdate(requireRoot(cwd), id, {
           title: values.title, type: values.type, status: values.status,
           priority: values.priority, addTag: values["add-tag"], rmTag: values["rm-tag"],
+          due: values.due, assignee: values.assignee, estimate: values.estimate,
+          addDep: values["add-dep"], rmDep: values["rm-dep"],
         })}\n`);
         return;
       }

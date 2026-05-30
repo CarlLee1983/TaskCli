@@ -79,3 +79,42 @@ test("rm 刪除 task 檔案", () => {
   runRm(root, "T-001");
   expect(existsSync(join(root, ".taskcli/tasks/T-001.md"))).toBe(false);
 });
+
+test("update --due 設定截止日，空字串清除", () => {
+  const root = setup();
+  writeTask(root, task("T-001"));
+  runUpdate(root, "T-001", { due: "2026-06-15" });
+  expect(readTask(root, "T-001").due).toBe("2026-06-15");
+  runUpdate(root, "T-001", { due: "" });
+  expect(readTask(root, "T-001").due).toBeUndefined();
+});
+
+test("update --due 驗證格式", () => {
+  const root = setup();
+  writeTask(root, task("T-001"));
+  expect(() => runUpdate(root, "T-001", { due: "2026/06/15" })).toThrow(/due/);
+});
+
+test("update --assignee / --estimate（空字串清除）", () => {
+  const root = setup();
+  writeTask(root, task("T-001"));
+  runUpdate(root, "T-001", { assignee: "carl", estimate: "3d" });
+  let t = readTask(root, "T-001");
+  expect(t.assignee).toBe("carl");
+  expect(t.estimate).toBe("3d");
+  runUpdate(root, "T-001", { assignee: "" });
+  expect(readTask(root, "T-001").assignee).toBeUndefined();
+});
+
+test("update --add-dep / --rm-dep（驗 ID、去重）", () => {
+  const root = setup();
+  writeTask(root, task("T-002"));
+  runUpdate(root, "T-002", { addDep: "T-001" });
+  runUpdate(root, "T-002", { addDep: "T-001" });
+  expect(readTask(root, "T-002").depends_on).toEqual(["T-001"]);
+  runUpdate(root, "T-002", { addDep: "T-003" });
+  expect(readTask(root, "T-002").depends_on).toEqual(["T-001", "T-003"]);
+  runUpdate(root, "T-002", { rmDep: "T-001" });
+  expect(readTask(root, "T-002").depends_on).toEqual(["T-003"]);
+  expect(() => runUpdate(root, "T-002", { addDep: "bad" })).toThrow(/depends_on/);
+});

@@ -34,6 +34,11 @@ type: "feature"      # feature|fix|refactor|docs|test|chore
 status: "todo"       # todo|in_progress|done|cancelled
 priority: "med"      # low|med|high
 tags: ["auth"]
+# 以下皆選填，未設定時不輸出
+due: "2026-06-15"          # 截止日 YYYY-MM-DD
+assignee: "carl"           # 負責人
+estimate: "3d"             # 工時估計（自由字串，如 2h/3d/5pt）
+depends_on: ["T-002"]      # 相依 task ID（T-NNN）
 created: "2026-05-30T10:00:00+08:00"
 updated: "2026-05-30T10:00:00+08:00"
 ---
@@ -51,7 +56,8 @@ updated: "2026-05-30T10:00:00+08:00"
 | `review <id> [--port n] [--open]` | 本地審閱 server |
 | `finalize <id>` | draft → tasks |
 | `list [--type --status --priority --tag --json]` | 列出 task |
-| `show <id> [--json]` / `update <id> ...` / `done <id>` / `rm <id>` | 管理 task |
+| `show <id> [--json]` / `done <id>` / `rm <id>` | 管理 task |
+| `update <id> [--title --type --status --priority --add-tag --rm-tag` `--due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]` | 改欄位（scalar 給空字串可清除） |
 
 讀取型指令支援 `--json`，方便 agent 解析。
 

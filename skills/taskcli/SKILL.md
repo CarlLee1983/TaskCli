@@ -66,6 +66,7 @@ taskcli finalize D-001
 | 開始做 | `taskcli update T-001 --status in_progress` |
 | 完成 | `taskcli done T-001` |
 | 改欄位 | `taskcli update T-001 --title ... --priority high --add-tag x --rm-tag y` |
+| 設排程/負責人/估時/相依 | `taskcli update T-001 --due 2026-06-15 --assignee carl --estimate 3d --add-dep T-002`（`--rm-dep` 移除；scalar 給空字串可清除） |
 | 取消/刪除 | `taskcli rm T-001` |
 
 ## 錯誤處理

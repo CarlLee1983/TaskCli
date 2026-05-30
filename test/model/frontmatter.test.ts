@@ -35,3 +35,33 @@ test("parseTask 驗證 enum 欄位", () => {
   const bad = serializeTask(sample).replace('type: "feature"', 'type: "bogus"');
   expect(() => parseTask(bad)).toThrow(/type/);
 });
+
+const full: Task = {
+  ...sample,
+  due: "2026-06-15",
+  assignee: "carl",
+  estimate: "3d",
+  depends_on: ["T-002", "T-003"],
+};
+
+test("round-trip 含選填欄位 due/assignee/estimate/depends_on", () => {
+  expect(parseTask(serializeTask(full))).toEqual(full);
+});
+
+test("向後相容：無選填欄位的 task 不輸出該行，parse 後欄位為 undefined", () => {
+  const md = serializeTask(sample);
+  expect(md).not.toContain("due:");
+  expect(md).not.toContain("assignee:");
+  expect(md).not.toContain("estimate:");
+  expect(md).not.toContain("depends_on:");
+  const parsed = parseTask(md);
+  expect(parsed.due).toBeUndefined();
+  expect(parsed.assignee).toBeUndefined();
+  expect(parsed.estimate).toBeUndefined();
+  expect(parsed.depends_on).toBeUndefined();
+});
+
+test("parseTask 驗證 due 格式", () => {
+  const bad = serializeTask(full).replace('due: "2026-06-15"', 'due: "2026/06/15"');
+  expect(() => parseTask(bad)).toThrow(/due/);
+});

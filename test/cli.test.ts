@@ -66,3 +66,24 @@ test("install-bin 開發模式給先 build 提示並非零退出", async () => {
   expect(res.code).not.toBe(0);
   expect(res.stderr).toContain("build");
 });
+
+test("update --due / --assignee / --estimate / --add-dep 經 CLI 寫入", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-sch-"));
+  await run(root, ["init"]);
+  await run(root, ["draft", "create", "--stdin"],
+    JSON.stringify({ source: "s", items: [{ title: "a", type: "fix" }] }));
+  await run(root, ["finalize", "D-001"]);
+
+  const upd = await run(root, [
+    "update", "T-001",
+    "--due", "2026-06-15", "--assignee", "carl", "--estimate", "3d", "--add-dep", "T-002",
+  ]);
+  expect(upd.code).toBe(0);
+
+  const show = await run(root, ["show", "T-001", "--json"]);
+  const t = JSON.parse(show.stdout);
+  expect(t.due).toBe("2026-06-15");
+  expect(t.assignee).toBe("carl");
+  expect(t.estimate).toBe("3d");
+  expect(t.depends_on).toEqual(["T-002"]);
+});

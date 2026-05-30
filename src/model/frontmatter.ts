@@ -1,5 +1,5 @@
 import {
-  parseEnum, parseTags,
+  parseEnum, parseTags, parseDue, parseDependsOn,
   TASK_TYPES, TASK_STATUSES, PRIORITIES,
   type Task,
 } from "./types";
@@ -17,11 +17,20 @@ export function serializeTask(t: Task): string {
     `status: ${JSON.stringify(t.status)}`,
     `priority: ${JSON.stringify(t.priority)}`,
     `tags: [${t.tags.map((x) => JSON.stringify(x)).join(",")}]`,
+  ];
+  // 選填欄位：僅在有值時輸出，維持舊 task 的輸出格式不變
+  if (t.due !== undefined) lines.push(`due: ${JSON.stringify(t.due)}`);
+  if (t.assignee !== undefined) lines.push(`assignee: ${JSON.stringify(t.assignee)}`);
+  if (t.estimate !== undefined) lines.push(`estimate: ${JSON.stringify(t.estimate)}`);
+  if (t.depends_on !== undefined && t.depends_on.length > 0) {
+    lines.push(`depends_on: [${t.depends_on.map((x) => JSON.stringify(x)).join(",")}]`);
+  }
+  lines.push(
     `created: ${JSON.stringify(t.created)}`,
     `updated: ${JSON.stringify(t.updated)}`,
     "---",
     "",
-  ];
+  );
   return `${lines.join("\n")}${t.body}`;
 }
 
@@ -45,7 +54,7 @@ export function parseTask(raw: string): Task {
   for (const k of FM_KEYS) {
     if (!(k in fm)) throw new Error(`frontmatter 缺少欄位：${k}`);
   }
-  return {
+  const task: Task = {
     id: String(fm.id),
     title: String(fm.title),
     type: parseEnum("type", fm.type, TASK_TYPES),
@@ -56,4 +65,10 @@ export function parseTask(raw: string): Task {
     updated: String(fm.updated),
     body: (bodyRaw ?? "").replace(/^\n/, ""),
   };
+  // 選填欄位：僅在 frontmatter 出現時還原（舊 task 不含這些 key）
+  if ("due" in fm) task.due = parseDue(fm.due);
+  if ("assignee" in fm) task.assignee = String(fm.assignee);
+  if ("estimate" in fm) task.estimate = String(fm.estimate);
+  if ("depends_on" in fm) task.depends_on = parseDependsOn(fm.depends_on);
+  return task;
 }

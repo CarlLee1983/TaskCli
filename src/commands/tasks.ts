@@ -5,8 +5,9 @@ import {
 import { serializeTask } from "../model/frontmatter";
 import { nowIso } from "../model/clock";
 import {
-  parseEnum, parseTags,
+  parseEnum, parseTags, parseDue, parseDependsOn,
   TASK_TYPES, TASK_STATUSES, PRIORITIES,
+  type Task,
 } from "../model/types";
 
 export interface ListOpts extends TaskFilter {
@@ -40,6 +41,11 @@ export interface UpdateOpts {
   title?: string;
   addTag?: string;
   rmTag?: string;
+  due?: string;       // YYYY-MM-DD；空字串代表清除
+  assignee?: string;  // 空字串代表清除
+  estimate?: string;  // 空字串代表清除
+  addDep?: string;    // 加入相依 task ID（T-NNN）
+  rmDep?: string;     // 移除相依 task ID
   now?: () => string;
 }
 
@@ -48,13 +54,25 @@ export function runUpdate(root: string, id: string, opts: UpdateOpts): string {
   let tags = t.tags;
   if (opts.addTag) tags = parseTags([...tags, opts.addTag]);
   if (opts.rmTag) tags = tags.filter((x) => x !== opts.rmTag);
-  const updated = {
+
+  let deps = t.depends_on;
+  if (opts.addDep !== undefined) deps = parseDependsOn([...(deps ?? []), opts.addDep]);
+  if (opts.rmDep !== undefined) deps = (deps ?? []).filter((x) => x !== opts.rmDep);
+  // 空陣列正規化為 undefined，使 frontmatter 不輸出 depends_on
+  const depends_on = deps && deps.length > 0 ? deps : undefined;
+
+  const updated: Task = {
     ...t,
     title: opts.title ?? t.title,
     type: opts.type ? parseEnum("type", opts.type, TASK_TYPES) : t.type,
     status: opts.status ? parseEnum("status", opts.status, TASK_STATUSES) : t.status,
     priority: opts.priority ? parseEnum("priority", opts.priority, PRIORITIES) : t.priority,
     tags,
+    depends_on,
+    // 空字串清除；未提供（undefined）則沿用原值
+    due: opts.due !== undefined ? parseDue(opts.due) : t.due,
+    assignee: opts.assignee !== undefined ? (opts.assignee || undefined) : t.assignee,
+    estimate: opts.estimate !== undefined ? (opts.estimate || undefined) : t.estimate,
     updated: (opts.now ?? nowIso)(),
   };
   writeTask(root, updated);
