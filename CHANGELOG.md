@@ -2,6 +2,16 @@
 
 所有重要變更會記錄在此檔。
 
+## v0.2.0 - Unreleased
+
+### Added
+
+- 新增 `taskcli add`，可不經 draft/review 快速建立單一正式 task。
+- 強化 `taskcli list`，支援 `--query`、`--sort`、`--desc`、`--limit`。
+- 新增 `taskcli update --body/--body-file`，可從 CLI 更新 task 內文。
+- 新增 `taskcli next`，依狀態、priority 與 dependency 顯示下一個可執行 task。
+- 新增 `taskcli --version` 與 help examples。
+
 ## v0.1.0 - 2026-05-30
 
 ### Added

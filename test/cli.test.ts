@@ -140,3 +140,19 @@ test("next 經 CLI 顯示下一個可執行 task", async () => {
   const tasks = JSON.parse(res.stdout);
   expect(tasks[0].title).toBe("高優先");
 });
+
+
+test("--version 顯示 package 版本", async () => {
+  const cwd = mkdtempSync(join(tmpdir(), "cli-version-"));
+  const res = await run(cwd, ["--version"]);
+  expect(res.code).toBe(0);
+  expect(res.stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
+});
+
+test("--help 含 examples", async () => {
+  const cwd = mkdtempSync(join(tmpdir(), "cli-help-"));
+  const res = await run(cwd, ["--help"]);
+  expect(res.code).toBe(0);
+  expect(res.stdout).toContain("Examples");
+  expect(res.stdout).toContain("taskcli add");
+});

@@ -71,16 +71,22 @@ updated: "2026-05-30T10:00:00+08:00"
 | `draft list / show <id>` | 檢視 draft |
 | `review <id> [--port n] [--open]` | 本地審閱 server |
 | `finalize <id>` | draft → tasks |
-| `list [--type --status --priority --tag --json]` | 列出 task |
+| `list [--type --status --priority --tag --query --sort --desc --limit --json]` | 列出 / 搜尋 / 排序 task |
+| `add <title> [--type --priority --tag --body --json]` | 快速建立單一正式 task |
 | `show <id> [--json]` / `done <id>` / `rm <id>` | 管理 task |
+| `next [--limit n --json]` | 顯示下一個可執行 task |
 | `import github [<n>] [--repo --state --label --limit --dry-run]` | 從 GitHub Issues 匯入 |
-| `update <id> [--title --type --status --priority --add-tag --rm-tag` `--due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]` | 改欄位（scalar 給空字串可清除） |
+| `update <id> [--title --type --status --priority --add-tag --rm-tag` `--body --body-file --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]` | 改欄位（scalar 給空字串可清除） |
+| `--version` | 顯示版本 |
 
 讀取型指令支援 `--json`，方便 agent 解析。
 
 常用補充：
 
 ```bash
+taskcli add "補 README 範例" --tag docs --body "補 quick add 用法"
+taskcli list --status todo --query github --sort priority --desc --limit 5
+taskcli next --limit 3
 taskcli update T-001 --body "驗收條件..."      # 直接覆寫 task 內文
 taskcli update T-001 --body-file notes.md      # 從檔案讀取 task 內文
 taskcli update T-001 --due "" --assignee "" --estimate ""  # 清除 scalar 選填欄位

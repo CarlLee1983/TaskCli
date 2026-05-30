@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { parseArgs } from "node:util";
+import pkg from "../package.json" with { type: "json" };
 import { requireRoot } from "./storage/paths";
 import { runInit } from "./commands/init";
 import { runDraftCreate, runDraftList, runDraftShow } from "./commands/draft";
@@ -31,6 +32,12 @@ const USAGE = `usage: taskcli <command> [options]
   import github [<n>] [--repo --state --label --limit --dry-run]   從 GitHub Issues 匯入
   install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
   skill install [--dest <dir>]        把 SKILL.md 安裝到 ~/.claude/skills/taskcli/
+
+Examples:
+  taskcli add "修 README" --tag docs
+  taskcli list --status todo --query github --sort priority --desc
+  taskcli next --limit 3
+  taskcli update T-001 --body-file notes.md
 `;
 
 async function readStdin(): Promise<string> {
@@ -46,6 +53,11 @@ async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const [cmd, ...rest] = argv;
   const cwd = process.cwd();
+
+  if (cmd === "--version" || cmd === "-v") {
+    process.stdout.write(`${pkg.version}\n`);
+    return;
+  }
 
   if (!cmd || cmd === "-h" || cmd === "--help") {
     process.stdout.write(USAGE);
