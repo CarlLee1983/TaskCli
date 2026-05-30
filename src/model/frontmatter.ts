@@ -25,6 +25,7 @@ export function serializeTask(t: Task): string {
   if (t.depends_on !== undefined && t.depends_on.length > 0) {
     lines.push(`depends_on: [${t.depends_on.map((x) => JSON.stringify(x)).join(",")}]`);
   }
+  if (t.source !== undefined) lines.push(`source: ${JSON.stringify(t.source)}`);
   lines.push(
     `created: ${JSON.stringify(t.created)}`,
     `updated: ${JSON.stringify(t.updated)}`,
@@ -70,5 +71,6 @@ export function parseTask(raw: string): Task {
   if ("assignee" in fm) task.assignee = String(fm.assignee);
   if ("estimate" in fm) task.estimate = String(fm.estimate);
   if ("depends_on" in fm) task.depends_on = parseDependsOn(fm.depends_on);
+  if ("source" in fm) task.source = String(fm.source);
   return task;
 }

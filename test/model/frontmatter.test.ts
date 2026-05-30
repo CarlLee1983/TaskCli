@@ -65,3 +65,26 @@ test("parseTask 驗證 due 格式", () => {
   const bad = serializeTask(full).replace('due: "2026-06-15"', 'due: "2026/06/15"');
   expect(() => parseTask(bad)).toThrow(/due/);
 });
+
+test("serializeTask 含 source 時輸出 source 行，往返解析一致", () => {
+  const t: Task = {
+    id: "T-001", title: "x", type: "feature", status: "todo", priority: "med",
+    tags: [], created: "2026-05-30T00:00:00+08:00", updated: "2026-05-30T00:00:00+08:00",
+    body: "內文\n", source: "github:owner/repo#42",
+  };
+  const raw = serializeTask(t);
+  expect(raw).toContain(`source: "github:owner/repo#42"`);
+  const back = parseTask(raw);
+  expect(back.source).toBe("github:owner/repo#42");
+});
+
+test("serializeTask 無 source 時不輸出 source 行，解析後為 undefined", () => {
+  const t: Task = {
+    id: "T-002", title: "y", type: "fix", status: "done", priority: "low",
+    tags: [], created: "2026-05-30T00:00:00+08:00", updated: "2026-05-30T00:00:00+08:00",
+    body: "",
+  };
+  const raw = serializeTask(t);
+  expect(raw).not.toContain("source:");
+  expect(parseTask(raw).source).toBeUndefined();
+});

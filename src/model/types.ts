@@ -22,6 +22,7 @@ export interface Task {
   assignee?: string;   // 負責人（自由字串）
   estimate?: string;   // 工時估計（自由字串，如 2h / 3d / 5pt）
   depends_on?: string[]; // 相依 task ID（T-NNN）
+  source?: string;     // 外部來源辨識，如 github:owner/repo#42
 }
 
 export interface DraftItem {
