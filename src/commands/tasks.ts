@@ -14,12 +14,36 @@ import {
 
 export interface ListOpts extends TaskFilter {
   json?: boolean;
+  sort?: "id" | "updated" | "priority" | "status" | "title";
+  desc?: boolean;
+  limit?: number;
+}
+
+
+const priorityRank = { high: 3, med: 2, low: 1 } as const;
+const statusRank = { in_progress: 4, todo: 3, done: 2, cancelled: 1 } as const;
+
+function sortTasks(tasks: Task[], sort: ListOpts["sort"] = "id", desc = false): Task[] {
+  const out = [...tasks].sort((a, b) => {
+    let cmp = 0;
+    if (sort === "priority") cmp = priorityRank[a.priority] - priorityRank[b.priority];
+    else if (sort === "status") cmp = statusRank[a.status] - statusRank[b.status];
+    else cmp = String(a[sort] ?? "").localeCompare(String(b[sort] ?? ""));
+    if (cmp === 0) cmp = a.id.localeCompare(b.id);
+    return desc ? -cmp : cmp;
+  });
+  return out;
 }
 
 export function runList(root: string, opts: ListOpts): string {
-  const filtered = filterTasks(listTasks(root), {
-    type: opts.type, status: opts.status, priority: opts.priority, tag: opts.tag,
+  let filtered = filterTasks(listTasks(root), {
+    type: opts.type, status: opts.status, priority: opts.priority, tag: opts.tag, query: opts.query,
   });
+  filtered = sortTasks(filtered, opts.sort, opts.desc);
+  if (opts.limit !== undefined) {
+    if (!Number.isInteger(opts.limit) || opts.limit <= 0) throw new Error("--limit 需為正整數");
+    filtered = filtered.slice(0, opts.limit);
+  }
   if (opts.json) return JSON.stringify(filtered);
   if (filtered.length === 0) return "（沒有符合的 task）";
   return filtered

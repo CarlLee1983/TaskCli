@@ -159,3 +159,13 @@ test("add 支援選填欄位與 json 輸出", () => {
   expect(t.estimate).toBe("2h");
   expect(t.depends_on).toEqual(["T-001"]);
 });
+
+
+test("list 支援 query、sort、desc、limit", () => {
+  const root = setup();
+  writeTask(root, task("T-001", { title: "alpha", priority: "low", tags: ["docs"], body: "readme" }));
+  writeTask(root, task("T-002", { title: "beta", priority: "high", tags: ["ux"], body: "search target" }));
+  writeTask(root, task("T-003", { title: "gamma", priority: "med", tags: ["ux"], body: "search target" }));
+  const parsed = JSON.parse(runList(root, { query: "target", sort: "priority", desc: true, limit: 1, json: true }));
+  expect(parsed.map((t: Task) => t.id)).toEqual(["T-002"]);
+});

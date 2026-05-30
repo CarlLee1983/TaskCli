@@ -21,7 +21,7 @@ const USAGE = `usage: taskcli <command> [options]
   review <draft-id> [--port <n>] [--open]      啟動本地審閱頁
   finalize <draft-id>                 draft 生成正式 task
   add <title> [--type --priority --tag --body --body-file --due --assignee --estimate --add-dep --json]
-  list [--type --status --priority --tag --json]   列出 task
+  list [--type --status --priority --tag --query --sort --desc --limit --json]   列出 task
   show <id> [--json]                  顯示 task
   update <id> [--title --type --status --priority --add-tag --rm-tag
               --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]
@@ -141,7 +141,8 @@ async function main(): Promise<void> {
           args: rest,
           options: {
             type: { type: "string" }, status: { type: "string" },
-            priority: { type: "string" }, tag: { type: "string" }, json: { type: "boolean" },
+            priority: { type: "string" }, tag: { type: "string" }, query: { type: "string" },
+            sort: { type: "string" }, desc: { type: "boolean" }, limit: { type: "string" }, json: { type: "boolean" },
           },
           allowPositionals: true,
         });
@@ -149,7 +150,9 @@ async function main(): Promise<void> {
           type: values.type as TaskType | undefined,
           status: values.status as TaskStatus | undefined,
           priority: values.priority as Priority | undefined,
-          tag: values.tag, json: values.json,
+          tag: values.tag, query: values.query,
+          sort: values.sort as "id" | "updated" | "priority" | "status" | "title" | undefined,
+          desc: values.desc, limit: values.limit ? Number(values.limit) : undefined, json: values.json,
         })}\n`);
         return;
       }

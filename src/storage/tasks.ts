@@ -37,6 +37,14 @@ export interface TaskFilter {
   status?: TaskStatus;
   priority?: Priority;
   tag?: string;
+  query?: string;
+}
+
+
+function matchesQuery(t: Task, query: string): boolean {
+  const q = query.toLowerCase();
+  const haystack = [t.id, t.title, t.body, t.source ?? "", ...t.tags].join("\n").toLowerCase();
+  return haystack.includes(q);
 }
 
 export function filterTasks(tasks: Task[], f: TaskFilter): Task[] {
@@ -45,6 +53,7 @@ export function filterTasks(tasks: Task[], f: TaskFilter): Task[] {
     if (f.status && t.status !== f.status) return false;
     if (f.priority && t.priority !== f.priority) return false;
     if (f.tag && !t.tags.includes(f.tag)) return false;
+    if (f.query && !matchesQuery(t, f.query)) return false;
     return true;
   });
 }
