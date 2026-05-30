@@ -55,4 +55,18 @@ updated: "2026-05-30T10:00:00+08:00"
 
 讀取型指令支援 `--json`，方便 agent 解析。
 
+## 給 AI agent 使用（skill）
+
+taskcli 內附一個 Claude Code skill，讓 agent 把你的口語/文字整理成 task、引導你在審閱頁確認後建立並追蹤。
+
+安裝（兩者都用編譯後的 binary 執行）：
+
+```bash
+taskcli install-bin                 # 把 taskcli 複製到 ~/.local/bin（確認在 PATH）
+taskcli skill install               # 把 skill 複製到 ~/.claude/skills/taskcli/
+taskcli skill install --dest .claude/skills   # 或裝到某專案
+```
+
+裝好後，在該專案對 Claude 說「幫我把這些要做的事整理成 task」即可觸發。
+
 設計與計畫見 `docs/superpowers/`。

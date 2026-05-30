@@ -6,6 +6,8 @@ import { runDraftCreate, runDraftList, runDraftShow } from "./commands/draft";
 import { runFinalize } from "./commands/finalize";
 import { runList, runShow, runUpdate, runDone, runRm } from "./commands/tasks";
 import { startReviewServer } from "./review/server";
+import { runSkillInstall } from "./commands/skill";
+import { runInstallBin } from "./commands/installBin";
 import type { TaskType, TaskStatus, Priority } from "./model/types";
 
 const USAGE = `usage: taskcli <command> [options]
@@ -21,6 +23,8 @@ const USAGE = `usage: taskcli <command> [options]
   update <id> [--title --type --status --priority --add-tag --rm-tag]
   done <id>                           標記完成
   rm <id>                             刪除 task
+  install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
+  skill install [--dest <dir>]        把 SKILL.md 安裝到 ~/.claude/skills/taskcli/
 `;
 
 async function readStdin(): Promise<string> {
@@ -157,6 +161,21 @@ async function main(): Promise<void> {
         const id = positionals[0];
         if (!id) fail("rm 需要 <id>");
         process.stdout.write(`${runRm(requireRoot(cwd), id)}\n`);
+        return;
+      }
+      case "install-bin": {
+        const { values } = parseArgs({ args: rest, options: { dest: { type: "string" } }, allowPositionals: true });
+        process.stdout.write(`${runInstallBin({ dest: values.dest })}\n`);
+        return;
+      }
+      case "skill": {
+        const [sub, ...sr] = rest;
+        if (sub === "install") {
+          const { values } = parseArgs({ args: sr, options: { dest: { type: "string" } }, allowPositionals: true });
+          process.stdout.write(`${runSkillInstall({ dest: values.dest })}\n`);
+          return;
+        }
+        fail(`未知 skill 子指令：${sub ?? ""}\n${USAGE}`);
         return;
       }
       default:

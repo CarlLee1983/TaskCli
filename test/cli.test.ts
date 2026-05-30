@@ -50,3 +50,19 @@ test("未知指令顯示用法", async () => {
   expect(res.code).not.toBe(0);
   expect(res.stderr.toLowerCase()).toContain("usage");
 });
+
+test("skill install --dest <tmp> 寫出 SKILL.md", async () => {
+  const dest = mkdtempSync(join(tmpdir(), "cli-skill-"));
+  const cwd = mkdtempSync(join(tmpdir(), "cli-skill-cwd-"));
+  const res = await run(cwd, ["skill", "install", "--dest", dest]);
+  expect(res.code).toBe(0);
+  expect(existsSync(join(dest, "taskcli", "SKILL.md"))).toBe(true);
+});
+
+test("install-bin 開發模式給先 build 提示並非零退出", async () => {
+  const cwd = mkdtempSync(join(tmpdir(), "cli-bin-"));
+  const res = await run(cwd, ["install-bin"]);
+  // 透過 `bun run` 跑，execPath 為 bun → 應提示先 build
+  expect(res.code).not.toBe(0);
+  expect(res.stderr).toContain("build");
+});
