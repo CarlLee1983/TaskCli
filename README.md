@@ -78,6 +78,14 @@ updated: "2026-05-30T10:00:00+08:00"
 
 讀取型指令支援 `--json`，方便 agent 解析。
 
+常用補充：
+
+```bash
+taskcli update T-001 --body "驗收條件..."      # 直接覆寫 task 內文
+taskcli update T-001 --body-file notes.md      # 從檔案讀取 task 內文
+taskcli update T-001 --due "" --assignee "" --estimate ""  # 清除 scalar 選填欄位
+```
+
 ## 從 GitHub Issues 匯入
 
 需先安裝 GitHub CLI 並 `gh auth login`。

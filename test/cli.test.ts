@@ -115,3 +115,16 @@ test("add 經 CLI 建立 task", async () => {
   expect(t.tags).toEqual(["ux"]);
   expect(t.body).toBe("內容");
 });
+
+
+test("update --body-file 經 CLI 更新 task body", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-body-"));
+  await run(root, ["init"]);
+  await run(root, ["add", "補內容"]);
+  const bodyFile = join(root, "body.md");
+  await Bun.write(bodyFile, "驗收條件\n- 通過測試\n");
+  const res = await run(root, ["update", "T-001", "--body-file", bodyFile]);
+  expect(res.code).toBe(0);
+  const show = await run(root, ["show", "T-001", "--json"]);
+  expect(JSON.parse(show.stdout).body).toContain("驗收條件");
+});

@@ -24,7 +24,7 @@ const USAGE = `usage: taskcli <command> [options]
   list [--type --status --priority --tag --query --sort --desc --limit --json]   列出 task
   show <id> [--json]                  顯示 task
   update <id> [--title --type --status --priority --add-tag --rm-tag
-              --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]
+              --body --body-file --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]
   done <id>                           標記完成
   rm <id>                             刪除 task
   import github [<n>] [--repo --state --label --limit --dry-run]   從 GitHub Issues 匯入
@@ -131,7 +131,7 @@ async function main(): Promise<void> {
         const body = values["body-file"] ? await Bun.file(values["body-file"] as string).text() : values.body;
         process.stdout.write(`${runAdd(requireRoot(cwd), title, {
           type: values.type, priority: values.priority, tags: values.tag, body,
-          due: values.due, assignee: values.assignee, estimate: values.estimate,
+          body, due: values.due, assignee: values.assignee, estimate: values.estimate,
           addDep: values["add-dep"], json: values.json,
         })}\n`);
         return;
@@ -171,6 +171,7 @@ async function main(): Promise<void> {
           options: {
             title: { type: "string" }, type: { type: "string" }, status: { type: "string" },
             priority: { type: "string" }, "add-tag": { type: "string" }, "rm-tag": { type: "string" },
+            body: { type: "string" }, "body-file": { type: "string" },
             due: { type: "string" }, assignee: { type: "string" }, estimate: { type: "string" },
             "add-dep": { type: "string" }, "rm-dep": { type: "string" },
           },
@@ -178,10 +179,12 @@ async function main(): Promise<void> {
         });
         const id = positionals[0];
         if (!id) fail("update 需要 <id>");
+        if (values.body !== undefined && values["body-file"] !== undefined) fail("--body 與 --body-file 不可同時使用");
+        const body = values["body-file"] ? await Bun.file(values["body-file"] as string).text() : values.body;
         process.stdout.write(`${runUpdate(requireRoot(cwd), id, {
           title: values.title, type: values.type, status: values.status,
           priority: values.priority, addTag: values["add-tag"], rmTag: values["rm-tag"],
-          due: values.due, assignee: values.assignee, estimate: values.estimate,
+          body, due: values.due, assignee: values.assignee, estimate: values.estimate,
           addDep: values["add-dep"], rmDep: values["rm-dep"],
         })}\n`);
         return;

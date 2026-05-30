@@ -111,6 +111,7 @@ export interface UpdateOpts {
   estimate?: string;  // 空字串代表清除
   addDep?: string;    // 加入相依 task ID（T-NNN）
   rmDep?: string;     // 移除相依 task ID
+  body?: string;
   now?: () => string;
 }
 
@@ -133,6 +134,7 @@ export function runUpdate(root: string, id: string, opts: UpdateOpts): string {
     status: opts.status ? parseEnum("status", opts.status, TASK_STATUSES) : t.status,
     priority: opts.priority ? parseEnum("priority", opts.priority, PRIORITIES) : t.priority,
     tags,
+    body: opts.body !== undefined ? opts.body : t.body,
     depends_on,
     // 空字串清除；未提供（undefined）則沿用原值
     due: opts.due !== undefined ? parseDue(opts.due) : t.due,

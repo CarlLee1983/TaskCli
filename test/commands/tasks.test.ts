@@ -169,3 +169,13 @@ test("list 支援 query、sort、desc、limit", () => {
   const parsed = JSON.parse(runList(root, { query: "target", sort: "priority", desc: true, limit: 1, json: true }));
   expect(parsed.map((t: Task) => t.id)).toEqual(["T-002"]);
 });
+
+
+test("update 支援覆寫 body", () => {
+  const root = setup();
+  writeTask(root, task("T-001", { body: "old" }));
+  runUpdate(root, "T-001", { body: "new body", now: () => "2026-05-31T09:00:00+08:00" });
+  const t = readTask(root, "T-001");
+  expect(t.body).toBe("new body");
+  expect(t.updated).toBe("2026-05-31T09:00:00+08:00");
+});
