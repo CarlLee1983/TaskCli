@@ -165,14 +165,17 @@ async function main(): Promise<void> {
       }
       case "install-bin": {
         const { values } = parseArgs({ args: rest, options: { dest: { type: "string" } }, allowPositionals: true });
-        process.stdout.write(`${runInstallBin({ dest: values.dest })}\n`);
+        process.stdout.write(`${runInstallBin({ dest: values.dest }, process.execPath)}\n`);
         return;
       }
       case "skill": {
         const [sub, ...sr] = rest;
         if (sub === "install") {
-          const { values } = parseArgs({ args: sr, options: { dest: { type: "string" } }, allowPositionals: true });
-          process.stdout.write(`${runSkillInstall({ dest: values.dest })}\n`);
+          const { values } = parseArgs({
+            args: sr, options: { dest: { type: "string" }, force: { type: "boolean" } },
+            allowPositionals: true,
+          });
+          process.stdout.write(`${runSkillInstall({ dest: values.dest, force: values.force })}\n`);
           return;
         }
         fail(`未知 skill 子指令：${sub ?? ""}\n${USAGE}`);

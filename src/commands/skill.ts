@@ -1,5 +1,5 @@
-import { copyFileSync, chmodSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { homedir } from "node:os";
 import { ensureDir, atomicWrite } from "../storage/io";
 
@@ -38,18 +38,3 @@ export function runSkillInstall(opts: SkillInstallOpts): string {
   return `已安裝 skill 到 ${out}`;
 }
 
-export function runInstallBin(options: { dest?: string }): string {
-  const dest = resolve(options.dest ?? join(homedir(), ".local", "bin"));
-  ensureDir(dest);
-
-  // Bun.argv[0] is the path to the current executable (works both in compiled binary and dev mode)
-  const src = process.execPath;
-  const outPath = join(dest, "taskcli");
-
-  copyFileSync(src, outPath);
-  chmodSync(outPath, 0o755);
-
-  if (!existsSync(outPath)) throw new Error(`複製失敗：${outPath} 不存在`);
-
-  return `已安裝 taskcli 到 ${outPath}`;
-}
