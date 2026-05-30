@@ -64,3 +64,18 @@ test("draft show 顯示內容；--json 回傳可解析 JSON", () => {
   const parsed = JSON.parse(runDraftShow(root, "D-001", { json: true }));
   expect(parsed.id).toBe("D-001");
 });
+
+test("draft create 採用 config.json 的預設 type/priority", () => {
+  const { writeFileSync } = require("node:fs");
+  const { join } = require("node:path");
+  const root = setup();
+  writeFileSync(
+    join(root, ".taskcli/config.json"),
+    JSON.stringify({ defaultType: "fix", defaultPriority: "high" }),
+    "utf8",
+  );
+  runDraftCreate(root, { json: JSON.stringify({ source: "x", items: [{ title: "無指定型別" }] }) });
+  const d = readDraft(root, "D-001");
+  expect(d.items[0]!.type).toBe("fix");
+  expect(d.items[0]!.priority).toBe("high");
+});

@@ -1,6 +1,7 @@
 import { writeDraft, readDraft, listDraftIds, parseDraft } from "../storage/drafts";
 import { nextId } from "../storage/ids";
 import { nowIso } from "../model/clock";
+import { loadConfig } from "../storage/config";
 import type { Draft, DraftItem } from "../model/types";
 
 export interface DraftCreateOpts {
@@ -9,7 +10,10 @@ export interface DraftCreateOpts {
 }
 
 // 在驗證前補上每個 item 的預設欄位（priority、type 缺省）
-function withItemDefaults(data: unknown): unknown {
+function withItemDefaults(
+  data: unknown,
+  defaults: { defaultType: string; defaultPriority: string },
+): unknown {
   if (typeof data !== "object" || data === null) return data;
   const o = data as Record<string, unknown>;
   if (!Array.isArray(o.items)) return data;
@@ -18,8 +22,8 @@ function withItemDefaults(data: unknown): unknown {
     const it = raw as Record<string, unknown>;
     return {
       ...it,
-      type: it.type ?? "feature",
-      priority: it.priority ?? "med",
+      type: it.type ?? defaults.defaultType,
+      priority: it.priority ?? defaults.defaultPriority,
     };
   });
   return { ...o, items };
@@ -32,9 +36,10 @@ export function runDraftCreate(root: string, opts: DraftCreateOpts): string {
   } catch {
     throw new Error("draft 內容非合法 JSON");
   }
+  const cfg = loadConfig(root);
   const id = nextId("D", listDraftIds(root));
   const now = (opts.now ?? nowIso)();
-  const validated = parseDraft({ ...(withItemDefaults(data) as object), id, createdAt: now });
+  const validated = parseDraft({ ...(withItemDefaults(data, cfg) as object), id, createdAt: now });
   const draft: Draft = { ...validated, id, createdAt: now };
   writeDraft(root, draft);
   return `已建立 draft ${id}（${draft.items.length} 個項目），用 \`taskcli review ${id}\` 審閱`;
