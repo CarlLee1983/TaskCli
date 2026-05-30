@@ -53,3 +53,39 @@ export function parseIssuesJson(raw: string, repo: string): GithubIssue[] {
     repo,
   }));
 }
+
+function runGh(args: string[]): string {
+  let proc;
+  try {
+    proc = Bun.spawnSync(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
+  } catch {
+    throw new Error("找不到 gh CLI，請先安裝 GitHub CLI 並執行 `gh auth login`");
+  }
+  if (proc.exitCode !== 0) {
+    const err = proc.stderr.toString().trim();
+    throw new Error(`gh 執行失敗：${err || `exit ${proc.exitCode}`}（請確認已 gh auth login 且 repo 正確）`);
+  }
+  return proc.stdout.toString();
+}
+
+/** repo 未指定時用 gh 從 cwd 推導 owner/repo。 */
+export function resolveRepo(opts: FetchOpts): string {
+  if (opts.repo) return opts.repo;
+  const out = runGh(["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"]).trim();
+  if (!out) throw new Error("無法推導 repo，請用 --repo owner/repo 指定");
+  return out;
+}
+
+/** 批次抓取 issue。 */
+export function fetchIssues(opts: FetchOpts): GithubIssue[] {
+  const repo = resolveRepo(opts);
+  const raw = runGh(buildGhArgs({ ...opts, repo }));
+  return parseIssuesJson(raw, repo);
+}
+
+/** 抓取單一 issue。 */
+export function fetchIssue(number: number, opts: FetchOpts): GithubIssue[] {
+  const repo = resolveRepo(opts);
+  const raw = runGh(buildGhArgs({ ...opts, repo }, number));
+  return parseIssuesJson(raw, repo);
+}

@@ -43,6 +43,6 @@ test("parseIssuesJson：攤平 labels/assignees，state 轉小寫，回填 repo"
 test("parseIssuesJson：單一物件（issue view 回傳）也能解析，body 缺值補空字串", () => {
   const raw = JSON.stringify({ number: 7, title: "t", state: "CLOSED", labels: [], assignees: [] });
   const issues = parseIssuesJson(raw, "o/r");
-  expect(issues[0].state).toBe("closed");
-  expect(issues[0].body).toBe("");
+  expect(issues[0]!.state).toBe("closed");
+  expect(issues[0]!.body).toBe("");
 });
