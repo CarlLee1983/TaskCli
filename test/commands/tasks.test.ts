@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { runInit } from "../../src/commands/init";
 import { writeTask, readTask } from "../../src/storage/tasks";
 import {
-  runList, runShow, runUpdate, runDone, runRm,
+  runList, runShow, runUpdate, runDone, runRm, runAdd,
 } from "../../src/commands/tasks";
 import type { Task } from "../../src/model/types";
 
@@ -117,4 +117,45 @@ test("update --add-dep / --rm-dep（驗 ID、去重）", () => {
   runUpdate(root, "T-002", { rmDep: "T-001" });
   expect(readTask(root, "T-002").depends_on).toEqual(["T-003"]);
   expect(() => runUpdate(root, "T-002", { addDep: "bad" })).toThrow(/depends_on/);
+});
+
+
+test("add 快速建立 task，使用 config 預設並回傳 id", () => {
+  const root = setup();
+  const msg = runAdd(root, "快速新增", {
+    tags: "ux,cli",
+    body: "說明",
+    now: () => "2026-05-31T10:00:00+08:00",
+  });
+  expect(msg).toContain("T-001");
+  const t = readTask(root, "T-001");
+  expect(t.title).toBe("快速新增");
+  expect(t.type).toBe("feature");
+  expect(t.priority).toBe("med");
+  expect(t.tags).toEqual(["ux", "cli"]);
+  expect(t.body).toBe("說明");
+  expect(t.status).toBe("todo");
+});
+
+test("add 支援選填欄位與 json 輸出", () => {
+  const root = setup();
+  const out = runAdd(root, "完整新增", {
+    type: "fix",
+    priority: "high",
+    tags: "bug",
+    due: "2026-06-15",
+    assignee: "carl",
+    estimate: "2h",
+    addDep: "T-001",
+    json: true,
+    now: () => "2026-05-31T10:00:00+08:00",
+  });
+  const t = JSON.parse(out);
+  expect(t.id).toBe("T-001");
+  expect(t.type).toBe("fix");
+  expect(t.priority).toBe("high");
+  expect(t.due).toBe("2026-06-15");
+  expect(t.assignee).toBe("carl");
+  expect(t.estimate).toBe("2h");
+  expect(t.depends_on).toEqual(["T-001"]);
 });

@@ -4,7 +4,7 @@ import { requireRoot } from "./storage/paths";
 import { runInit } from "./commands/init";
 import { runDraftCreate, runDraftList, runDraftShow } from "./commands/draft";
 import { runFinalize } from "./commands/finalize";
-import { runList, runShow, runUpdate, runDone, runRm } from "./commands/tasks";
+import { runAdd, runList, runShow, runUpdate, runDone, runRm } from "./commands/tasks";
 import { startReviewServer } from "./review/server";
 import { runSkillInstall } from "./commands/skill";
 import { runInstallBin } from "./commands/installBin";
@@ -20,6 +20,7 @@ const USAGE = `usage: taskcli <command> [options]
   draft show <id> [--json]            顯示 draft
   review <draft-id> [--port <n>] [--open]      啟動本地審閱頁
   finalize <draft-id>                 draft 生成正式 task
+  add <title> [--type --priority --tag --body --body-file --due --assignee --estimate --add-dep --json]
   list [--type --status --priority --tag --json]   列出 task
   show <id> [--json]                  顯示 task
   update <id> [--title --type --status --priority --add-tag --rm-tag
@@ -110,6 +111,29 @@ async function main(): Promise<void> {
         const id = positionals[0];
         if (!id) fail("finalize 需要 <draft-id>");
         process.stdout.write(`${runFinalize(requireRoot(cwd), id, {})}\n`);
+        return;
+      }
+
+      case "add": {
+        const { values, positionals } = parseArgs({
+          args: rest,
+          options: {
+            type: { type: "string" }, priority: { type: "string" }, tag: { type: "string" },
+            body: { type: "string" }, "body-file": { type: "string" },
+            due: { type: "string" }, assignee: { type: "string" }, estimate: { type: "string" },
+            "add-dep": { type: "string" }, json: { type: "boolean" },
+          },
+          allowPositionals: true,
+        });
+        const title = positionals[0];
+        if (!title) fail("add 需要 <title>");
+        if (values.body !== undefined && values["body-file"] !== undefined) fail("--body 與 --body-file 不可同時使用");
+        const body = values["body-file"] ? await Bun.file(values["body-file"] as string).text() : values.body;
+        process.stdout.write(`${runAdd(requireRoot(cwd), title, {
+          type: values.type, priority: values.priority, tags: values.tag, body,
+          due: values.due, assignee: values.assignee, estimate: values.estimate,
+          addDep: values["add-dep"], json: values.json,
+        })}\n`);
         return;
       }
       case "list": {

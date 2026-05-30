@@ -1,8 +1,10 @@
 import {
-  listTasks, filterTasks, readTask, writeTask, deleteTask,
+  listTasks, filterTasks, readTask, writeTask, deleteTask, listTaskIds,
   type TaskFilter,
 } from "../storage/tasks";
 import { serializeTask } from "../model/frontmatter";
+import { nextId } from "../storage/ids";
+import { loadConfig } from "../storage/config";
 import { nowIso } from "../model/clock";
 import {
   parseEnum, parseTags, parseDue, parseDependsOn,
@@ -32,6 +34,45 @@ export function runShow(root: string, id: string, opts: { json?: boolean }): str
   const t = readTask(root, id);
   if (opts.json) return JSON.stringify(t, null, 2);
   return serializeTask(t);
+}
+
+
+export interface AddOpts {
+  type?: string;
+  priority?: string;
+  tags?: string;
+  body?: string;
+  due?: string;
+  assignee?: string;
+  estimate?: string;
+  addDep?: string;
+  json?: boolean;
+  now?: () => string;
+}
+
+export function runAdd(root: string, title: string, opts: AddOpts): string {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) throw new Error("add 需要非空白 title");
+  const cfg = loadConfig(root);
+  const now = (opts.now ?? nowIso)();
+  const task: Task = {
+    id: nextId("T", listTaskIds(root)),
+    title: cleanTitle,
+    type: opts.type ? parseEnum("type", opts.type, TASK_TYPES) : cfg.defaultType,
+    status: "todo",
+    priority: opts.priority ? parseEnum("priority", opts.priority, PRIORITIES) : cfg.defaultPriority,
+    tags: parseTags(opts.tags ?? []),
+    created: now,
+    updated: now,
+    body: opts.body ?? "",
+    due: opts.due !== undefined ? parseDue(opts.due) : undefined,
+    assignee: opts.assignee || undefined,
+    estimate: opts.estimate || undefined,
+    depends_on: opts.addDep !== undefined ? parseDependsOn(opts.addDep) : undefined,
+  };
+  writeTask(root, task);
+  if (opts.json) return JSON.stringify(task, null, 2);
+  return `已建立 ${task.id}`;
 }
 
 export interface UpdateOpts {

@@ -102,3 +102,16 @@ test("import 無子指令顯示用法並非零退出", async () => {
   const res = await run(root, ["import"]);
   expect(res.code).not.toBe(0);
 });
+
+
+test("add 經 CLI 建立 task", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-add-"));
+  await run(root, ["init"]);
+  const res = await run(root, ["add", "快速新增", "--tag", "ux", "--body", "內容", "--json"]);
+  expect(res.code).toBe(0);
+  const t = JSON.parse(res.stdout);
+  expect(t.id).toBe("T-001");
+  expect(t.title).toBe("快速新增");
+  expect(t.tags).toEqual(["ux"]);
+  expect(t.body).toBe("內容");
+});
