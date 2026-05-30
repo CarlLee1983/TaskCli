@@ -69,6 +69,15 @@ taskcli finalize D-001
 | 設排程/負責人/估時/相依 | `taskcli update T-001 --due 2026-06-15 --assignee carl --estimate 3d --add-dep T-002`（`--rm-dep` 移除；scalar 給空字串可清除） |
 | 取消/刪除 | `taskcli rm T-001` |
 
+## 從 GitHub Issues 匯入
+
+當使用者想把 GitHub issue 轉成 task 時，請使用者執行 `taskcli import github`（或代為組指令）：
+
+- 預設匯入目前 repo 的 open issues；可加 `--repo owner/repo`、`--state all`、`--label bug`、`--limit 50`，或帶 `<n>` 只匯入單一 issue。
+- 建議先 `--dry-run` 預覽再實際匯入。
+- 以 `source: github:owner/repo#<n>` 辨識來源，重跑為更新而非重建（單向匯入，會以 issue 狀態覆寫本地 status）。
+- 匯入後照常用 `list` / `show` / `update` 追蹤。
+
 ## 錯誤處理
 
 - 「找不到 .taskcli」：請使用者先 `taskcli init`。

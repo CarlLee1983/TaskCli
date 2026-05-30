@@ -57,9 +57,29 @@ updated: "2026-05-30T10:00:00+08:00"
 | `finalize <id>` | draft → tasks |
 | `list [--type --status --priority --tag --json]` | 列出 task |
 | `show <id> [--json]` / `done <id>` / `rm <id>` | 管理 task |
+| `import github [<n>] [--repo --state --label --limit --dry-run]` | 從 GitHub Issues 匯入 |
 | `update <id> [--title --type --status --priority --add-tag --rm-tag` `--due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]` | 改欄位（scalar 給空字串可清除） |
 
 讀取型指令支援 `--json`，方便 agent 解析。
+
+## 從 GitHub Issues 匯入
+
+需先安裝 GitHub CLI 並 `gh auth login`。
+
+```bash
+# 匯入目前 repo 的 open issues（dry-run 先預覽）
+taskcli import github --dry-run
+taskcli import github
+
+# 指定 repo / 範圍
+taskcli import github --repo owner/repo --state all --label bug --limit 50
+
+# 只匯入單一 issue
+taskcli import github 42
+```
+
+以 `source: github:owner/repo#<n>` 辨識來源，重跑時更新既有 task 而非重建。
+注意：import 為單向，re-import 會以 issue 狀態覆寫本地 status。
 
 ## 給 AI agent 使用（skill）
 
