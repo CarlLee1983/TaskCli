@@ -1,0 +1,58 @@
+# TaskCli
+
+在任何 repo 的 `.taskcli/` 資料夾中，以「draft → 本地 HTML 審閱 → 正式 task」流程建立並追蹤 task 的 CLI 工具。CLI 純存取、不碰 LLM；自然語言整理交給 AI agent。
+
+## 安裝 / 編譯
+
+```bash
+bun install
+bun run build        # 產出單一執行檔 dist/taskcli
+```
+
+開發時可直接 `bun run src/cli.ts <command>`。
+
+## 流程
+
+```bash
+taskcli init                          # 在當前 repo 建 .taskcli/
+echo '{"source":"做登入","items":[{"title":"登入 API","type":"feature"}]}' \
+  | taskcli draft create --stdin      # 建 draft（agent 通常餵這段 JSON）
+taskcli review D-001 --open           # 開瀏覽器審閱、修改、送出
+taskcli finalize D-001                # 生成正式 task
+taskcli list                          # 追蹤
+taskcli update T-001 --status in_progress
+taskcli done T-001
+```
+
+## task 結構（`.taskcli/tasks/T-001.md`）
+
+```yaml
+---
+id: "T-001"
+title: "實作登入 API"
+type: "feature"      # feature|fix|refactor|docs|test|chore
+status: "todo"       # todo|in_progress|done|cancelled
+priority: "med"      # low|med|high
+tags: ["auth"]
+created: "2026-05-30T10:00:00+08:00"
+updated: "2026-05-30T10:00:00+08:00"
+---
+
+描述內文
+```
+
+## 指令一覽
+
+| 指令 | 說明 |
+|------|------|
+| `init` | 建立 `.taskcli/` 骨架 |
+| `draft create --stdin\|--from-json <f>` | 建立 draft |
+| `draft list / show <id>` | 檢視 draft |
+| `review <id> [--port n] [--open]` | 本地審閱 server |
+| `finalize <id>` | draft → tasks |
+| `list [--type --status --priority --tag --json]` | 列出 task |
+| `show <id> [--json]` / `update <id> ...` / `done <id>` / `rm <id>` | 管理 task |
+
+讀取型指令支援 `--json`，方便 agent 解析。
+
+設計與計畫見 `docs/superpowers/`。
