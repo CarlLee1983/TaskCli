@@ -6,6 +6,7 @@ export interface ReviewServer {
   url: string;       // 形如 http://127.0.0.1:PORT/
   port: number;
   stop: () => void;
+  whenSaved: Promise<void>; // 第一次成功 POST /save 後 resolve，供 CLI 自動關閉
 }
 
 export interface ReviewOpts {
@@ -15,6 +16,10 @@ export interface ReviewOpts {
 export function startReviewServer(root: string, draftId: string, opts: ReviewOpts): ReviewServer {
   // 啟動前先確認 draft 存在（不存在會丟錯）
   readDraft(root, draftId);
+
+  // deferred：第一次成功送出時 resolve，讓 CLI 能等待後自動關閉
+  let resolveSaved!: () => void;
+  const whenSaved = new Promise<void>((resolve) => { resolveSaved = resolve; });
 
   const server = Bun.serve({
     hostname: "127.0.0.1",
@@ -33,6 +38,9 @@ export function startReviewServer(root: string, draftId: string, opts: ReviewOpt
           const validated = parseDraft({ ...data, id: draftId });
           const draft: Draft = { ...validated, id: draftId };
           writeDraft(root, draft);
+          // 同步呼叫 resolve：其 .then 屬 microtask，會在本 handler 回傳 Response
+          // 之後才執行，故回應能正常送出；CLI 收到訊號後再優雅關閉 server。
+          resolveSaved();
           return new Response("ok");
         } catch (e) {
           return new Response(e instanceof Error ? e.message : "bad request", { status: 400 });
@@ -46,6 +54,8 @@ export function startReviewServer(root: string, draftId: string, opts: ReviewOpt
   return {
     url: `http://127.0.0.1:${port}/`,
     port,
-    stop: () => server.stop(true),
+    // 優雅關閉：等進行中的請求（含剛送出的 /save 回應）完成再停，避免截斷回應
+    stop: () => server.stop(),
+    whenSaved,
   };
 }

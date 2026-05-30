@@ -93,10 +93,12 @@ async function main(): Promise<void> {
         if (!id) fail("review 需要 <draft-id>");
         const root = requireRoot(cwd);
         const srv = startReviewServer(root, id, { port: values.port ? Number(values.port) : undefined });
-        process.stdout.write(`審閱頁已啟動：${srv.url}\n按 Ctrl+C 結束（送出後可直接關閉）。\n`);
+        process.stdout.write(`審閱頁已啟動：${srv.url}\n送出後會自動關閉（或按 Ctrl+C 結束）。\n`);
         if (values.open) Bun.spawn(["open", srv.url]);
-        // 保持行程存活直到使用者中止
-        await new Promise(() => {});
+        // 等待使用者在審閱頁按「送出」，成功回寫後優雅關閉 server 並退出
+        await srv.whenSaved;
+        srv.stop();
+        process.stdout.write(`✅ 已收到送出，可執行：taskcli finalize ${id}\n`);
         return;
       }
       case "finalize": {

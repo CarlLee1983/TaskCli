@@ -43,7 +43,7 @@ echo '{
 
 ## 步驟 3：請使用者審閱（重要）
 
-`taskcli review` 會啟動本地審閱頁並**持續阻塞直到 Ctrl+C**。**不要由你在前景執行它**，否則會卡住。改為請使用者自行執行（在 Claude Code 可用 `!` 前綴在 session 內跑）：
+`taskcli review` 會啟動本地審閱頁並**阻塞直到使用者按「送出」**（送出後 server 會自動關閉並退出；也可按 Ctrl+C 中止）。**不要由你在前景執行它**，否則會卡住等使用者操作。改為請使用者自行執行（在 Claude Code 可用 `!` 前綴在 session 內跑）：
 
 > 請執行 `! taskcli review D-001 --open`，在開啟的頁面勾選要納入的項目、調整 type/priority/標題、增刪項目，按「送出」後回我說一聲。
 

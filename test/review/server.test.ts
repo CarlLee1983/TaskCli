@@ -62,3 +62,42 @@ test("POST /save 對壞資料回 400", async () => {
     srv.stop();
   }
 });
+
+const validBody = JSON.stringify({
+  id: "D-001", source: "x", createdAt: "2026-05-30T10:00:00+08:00",
+  items: [{ title: "改過了", type: "feature", priority: "high", tags: [], body: "", include: true }],
+});
+
+test("成功 POST /save 後 whenSaved resolve（供 CLI 自動關閉）", async () => {
+  const root = setup();
+  const srv = startReviewServer(root, "D-001", { port: 0 });
+  try {
+    await fetch(srv.url + "save", {
+      method: "POST", headers: { "content-type": "application/json" }, body: validBody,
+    });
+    const settled = await Promise.race([
+      srv.whenSaved.then(() => "saved"),
+      Bun.sleep(1000).then(() => "timeout"),
+    ]);
+    expect(settled).toBe("saved");
+  } finally {
+    srv.stop();
+  }
+});
+
+test("壞資料 POST /save 不會觸發 whenSaved（維持等待）", async () => {
+  const root = setup();
+  const srv = startReviewServer(root, "D-001", { port: 0 });
+  try {
+    await fetch(srv.url + "save", {
+      method: "POST", headers: { "content-type": "application/json" }, body: '{"items":"not-array"}',
+    });
+    const settled = await Promise.race([
+      srv.whenSaved.then(() => "saved"),
+      Bun.sleep(150).then(() => "pending"),
+    ]);
+    expect(settled).toBe("pending");
+  } finally {
+    srv.stop();
+  }
+});
