@@ -1,0 +1,17 @@
+{
+  "taskTypes": [
+    "feature",
+    "fix",
+    "refactor",
+    "docs",
+    "test",
+    "chore"
+  ],
+  "priorities": [
+    "low",
+    "med",
+    "high"
+  ],
+  "defaultType": "feature",
+  "defaultPriority": "med"
+}
