@@ -1,5 +1,7 @@
 # TaskCli
 
+**目前版本：v0.1.0（初步可交付版）**
+
 在任何 repo 的 `.taskcli/` 資料夾中，以「draft → 本地 HTML 審閱 → 正式 task」流程建立並追蹤 task 的 CLI 工具。CLI 純存取、不碰 LLM；自然語言整理交給 AI agent。
 
 ## 安裝 / 編譯
@@ -10,6 +12,20 @@ bun run build        # 產出單一執行檔 dist/taskcli
 ```
 
 開發時可直接 `bun run src/cli.ts <command>`。
+
+## v0.1.0 範圍
+
+此版本定位為本機 task 管理 CLI 的初版，已完成：
+
+- `.taskcli/` 初始化與設定檔建立。
+- `draft → review → finalize` 任務建立流程。
+- task 的列出、檢視、更新、完成、刪除。
+- schema 欄位：`due`、`depends_on`、`assignee`、`estimate`、`source`。
+- 本地 HTML review server，送出後自動關閉。
+- GitHub Issues 單向匯入與 `source` upsert。
+- `install-bin` 與 `skill install`，方便安裝 binary 與 agent skill。
+
+版本紀錄見 [`CHANGELOG.md`](CHANGELOG.md)，本版交付說明見 [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md)。
 
 ## 流程
 

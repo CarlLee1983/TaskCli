@@ -1,0 +1,28 @@
+# Changelog
+
+所有重要變更會記錄在此檔。
+
+## v0.1.0 - 2026-05-30
+
+### Added
+
+- 建立 TaskCli Bun + TypeScript CLI 專案骨架與單一 binary build 流程。
+- 新增 `.taskcli/` 初始化、config fallback 與 task/draft 檔案儲存層。
+- 新增 draft 流程：`draft create`、`draft list`、`draft show`。
+- 新增本地 HTML review server：可審閱、修改、送出 draft；成功送出後 CLI 自動關閉 server。
+- 新增 `finalize`，將 include=true 的 draft items 轉成正式 task。
+- 新增 task 管理：`list`、`show`、`update`、`done`、`rm`，讀取型指令支援 `--json`。
+- schema 支援 `due`、`depends_on`、`assignee`、`estimate`、`source`。
+- 新增 GitHub Issues 匯入：`import github` 支援 repo/state/label/limit/dry-run 與單一 issue 匯入。
+- 新增 agent skill 來源檔與 `skill install`。
+- 新增 `install-bin`，可將編譯後 binary 安裝到 `~/.local/bin` 或指定目錄。
+
+### Fixed
+
+- 修復 review page 內嵌 JSON/HTML 轉義問題，避免 `</script>` 或特殊字元破壞頁面與按鈕行為。
+- 強化 `install-bin` 對 Bun 編譯 binary 的判斷，涵蓋 POSIX `/\$bunfs/`、Windows `B:\~BUN\` 與 Bun 被改名情境。
+
+### Verified
+
+- `bun test`：110 pass / 0 fail。
+- Git 工作樹在補文件前為乾淨狀態；所有 `.taskcli/tasks/T-001` 至 `T-006` 均為 `done`。
