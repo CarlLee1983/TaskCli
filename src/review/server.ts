@@ -42,9 +42,10 @@ export function startReviewServer(root: string, draftId: string, opts: ReviewOpt
     },
   });
 
+  const port = server.port ?? 0;
   return {
-    url: `http://127.0.0.1:${server.port}/`,
-    port: server.port,
+    url: `http://127.0.0.1:${port}/`,
+    port,
     stop: () => server.stop(true),
   };
 }
