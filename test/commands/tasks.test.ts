@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { runInit } from "../../src/commands/init";
 import { writeTask, readTask } from "../../src/storage/tasks";
 import {
-  runList, runShow, runUpdate, runDone, runRm, runAdd,
+  runList, runShow, runUpdate, runDone, runRm, runAdd, runNext,
 } from "../../src/commands/tasks";
 import type { Task } from "../../src/model/types";
 
@@ -178,4 +178,14 @@ test("update 支援覆寫 body", () => {
   const t = readTask(root, "T-001");
   expect(t.body).toBe("new body");
   expect(t.updated).toBe("2026-05-31T09:00:00+08:00");
+});
+
+
+test("next 排除 blocked task 並依狀態與優先序排序", () => {
+  const root = setup();
+  writeTask(root, task("T-001", { status: "todo", priority: "high", depends_on: ["T-099"] }));
+  writeTask(root, task("T-002", { status: "todo", priority: "med" }));
+  writeTask(root, task("T-003", { status: "in_progress", priority: "low" }));
+  const parsed = JSON.parse(runNext(root, { json: true, limit: 2 }));
+  expect(parsed.map((t: Task) => t.id)).toEqual(["T-003", "T-002"]);
 });

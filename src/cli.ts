@@ -4,7 +4,7 @@ import { requireRoot } from "./storage/paths";
 import { runInit } from "./commands/init";
 import { runDraftCreate, runDraftList, runDraftShow } from "./commands/draft";
 import { runFinalize } from "./commands/finalize";
-import { runAdd, runList, runShow, runUpdate, runDone, runRm } from "./commands/tasks";
+import { runAdd, runList, runShow, runUpdate, runDone, runRm, runNext } from "./commands/tasks";
 import { startReviewServer } from "./review/server";
 import { runSkillInstall } from "./commands/skill";
 import { runInstallBin } from "./commands/installBin";
@@ -26,6 +26,7 @@ const USAGE = `usage: taskcli <command> [options]
   update <id> [--title --type --status --priority --add-tag --rm-tag
               --body --body-file --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]
   done <id>                           標記完成
+  next [--limit n --json]             顯示下一個可執行 task
   rm <id>                             刪除 task
   import github [<n>] [--repo --state --label --limit --dry-run]   從 GitHub Issues 匯入
   install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
@@ -194,6 +195,19 @@ async function main(): Promise<void> {
         const id = positionals[0];
         if (!id) fail("done 需要 <id>");
         process.stdout.write(`${runDone(requireRoot(cwd), id, {})}\n`);
+        return;
+      }
+
+      case "next": {
+        const { values } = parseArgs({
+          args: rest,
+          options: { limit: { type: "string" }, json: { type: "boolean" } },
+          allowPositionals: true,
+        });
+        process.stdout.write(`${runNext(requireRoot(cwd), {
+          limit: values.limit ? Number(values.limit) : undefined,
+          json: values.json,
+        })}\n`);
         return;
       }
       case "rm": {

@@ -128,3 +128,15 @@ test("update --body-file 經 CLI 更新 task body", async () => {
   const show = await run(root, ["show", "T-001", "--json"]);
   expect(JSON.parse(show.stdout).body).toContain("驗收條件");
 });
+
+
+test("next 經 CLI 顯示下一個可執行 task", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-next-"));
+  await run(root, ["init"]);
+  await run(root, ["add", "第一件", "--priority", "low"]);
+  await run(root, ["add", "高優先", "--priority", "high"]);
+  const res = await run(root, ["next", "--json"]);
+  expect(res.code).toBe(0);
+  const tasks = JSON.parse(res.stdout);
+  expect(tasks[0].title).toBe("高優先");
+});

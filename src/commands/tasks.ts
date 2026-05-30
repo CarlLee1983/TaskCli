@@ -146,6 +146,39 @@ export function runUpdate(root: string, id: string, opts: UpdateOpts): string {
   return `已更新 ${id}`;
 }
 
+
+export interface NextOpts {
+  json?: boolean;
+  limit?: number;
+}
+
+function isDone(tasks: Task[], id: string): boolean {
+  return tasks.find((t) => t.id === id)?.status === "done";
+}
+
+function isBlocked(t: Task, all: Task[]): boolean {
+  return (t.depends_on ?? []).some((id) => !isDone(all, id));
+}
+
+export function runNext(root: string, opts: NextOpts): string {
+  const all = listTasks(root);
+  const limit = opts.limit ?? 1;
+  if (!Number.isInteger(limit) || limit <= 0) throw new Error("--limit 需為正整數");
+  const candidates = all
+    .filter((t) => (t.status === "todo" || t.status === "in_progress") && !isBlocked(t, all))
+    .sort((a, b) => {
+      const status = statusRank[a.status] - statusRank[b.status];
+      if (status !== 0) return -status;
+      const priority = priorityRank[a.priority] - priorityRank[b.priority];
+      if (priority !== 0) return -priority;
+      return a.id.localeCompare(b.id);
+    })
+    .slice(0, limit);
+  if (opts.json) return JSON.stringify(candidates, null, 2);
+  if (candidates.length === 0) return "（沒有可執行的 task）";
+  return candidates.map((t) => `${t.id}  [${t.status}]  (${t.type}/${t.priority})  ${t.title}`).join("\n");
+}
+
 export function runDone(root: string, id: string, opts: { now?: () => string }): string {
   return runUpdate(root, id, { status: "done", now: opts.now });
 }
