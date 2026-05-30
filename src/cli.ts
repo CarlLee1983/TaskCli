@@ -8,6 +8,8 @@ import { runList, runShow, runUpdate, runDone, runRm } from "./commands/tasks";
 import { startReviewServer } from "./review/server";
 import { runSkillInstall } from "./commands/skill";
 import { runInstallBin } from "./commands/installBin";
+import { runImport } from "./commands/import";
+import type { FetchOpts } from "./integrations/github";
 import type { TaskType, TaskStatus, Priority } from "./model/types";
 
 const USAGE = `usage: taskcli <command> [options]
@@ -24,6 +26,7 @@ const USAGE = `usage: taskcli <command> [options]
               --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]
   done <id>                           標記完成
   rm <id>                             刪除 task
+  import github [<n>] [--repo --state --label --limit --dry-run]   從 GitHub Issues 匯入
   install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
   skill install [--dest <dir>]        把 SKILL.md 安裝到 ~/.claude/skills/taskcli/
 `;
@@ -168,6 +171,34 @@ async function main(): Promise<void> {
         const id = positionals[0];
         if (!id) fail("rm 需要 <id>");
         process.stdout.write(`${runRm(requireRoot(cwd), id)}\n`);
+        return;
+      }
+      case "import": {
+        const [sub, ...sr] = rest;
+        if (sub === "github") {
+          const { values, positionals } = parseArgs({
+            args: sr,
+            options: {
+              repo: { type: "string" }, state: { type: "string" },
+              label: { type: "string" }, limit: { type: "string" },
+              "dry-run": { type: "boolean" },
+            },
+            allowPositionals: true,
+          });
+          const number = positionals[0] ? Number(positionals[0]) : undefined;
+          const state = values.state as FetchOpts["state"] | undefined;
+          const msg = runImport(requireRoot(cwd), {
+            number,
+            dryRun: values["dry-run"],
+            repo: values.repo,
+            state,
+            label: values.label,
+            limit: values.limit ? Number(values.limit) : undefined,
+          });
+          process.stdout.write(`${msg}\n`);
+          return;
+        }
+        fail(`未知 import 子指令：${sub ?? ""}\n${USAGE}`);
         return;
       }
       case "install-bin": {

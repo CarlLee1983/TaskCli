@@ -87,3 +87,18 @@ test("update --due / --assignee / --estimate / --add-dep 經 CLI 寫入", async 
   expect(t.estimate).toBe("3d");
   expect(t.depends_on).toEqual(["T-002"]);
 });
+
+test("import 未知子指令給錯誤訊息並非零退出", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-import-"));
+  await run(root, ["init"]);
+  const res = await run(root, ["import", "bogus"]);
+  expect(res.code).not.toBe(0);
+  expect(res.stderr).toContain("未知 import 子指令");
+});
+
+test("import 無子指令顯示用法並非零退出", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-import-none-"));
+  await run(root, ["init"]);
+  const res = await run(root, ["import"]);
+  expect(res.code).not.toBe(0);
+});
