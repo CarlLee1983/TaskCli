@@ -16,13 +16,24 @@ export interface InstallBinOpts {
   dest?: string; // 預設 ~/.local/bin
 }
 
-function isCompiledBinary(execPath: string): boolean {
-  // 開發模式以 `bun run` 執行時 execPath 為 bun 本身
-  return basename(execPath) !== "bun";
+// Bun 編譯成 standalone executable 後，entry（Bun.main）會落在嵌入式虛擬檔案系統：
+//   POSIX  : /$bunfs/root/...
+//   Windows: B:\~BUN\root\...
+// 以此判定比對 execPath 的 basename（會被 bun 改名或 .exe 副檔名誤判）更穩健且跨平台。
+const EMBEDDED_FS_MARKERS = ["/$bunfs/", "\\~BUN\\", "/~BUN/"] as const;
+
+/** entry（Bun.main）是否落在 Bun 編譯後的嵌入式檔案系統，亦即以編譯後 binary 執行。 */
+export function isCompiledBinary(entryPath: string): boolean {
+  return EMBEDDED_FS_MARKERS.some((m) => entryPath.includes(m));
 }
 
-export function runInstallBin(opts: InstallBinOpts, execPath: string): string {
-  if (!isCompiledBinary(execPath)) {
+/**
+ * 安裝 binary 到 destDir。
+ * @param execPath  process.execPath——編譯後為真實 binary 路徑，用於複製。
+ * @param entryPath Bun.main——用於判定是否以編譯後 binary 執行（dev 模式為真實腳本路徑）。
+ */
+export function runInstallBin(opts: InstallBinOpts, execPath: string, entryPath: string): string {
+  if (!isCompiledBinary(entryPath)) {
     throw new Error(
       "偵測到以 bun 開發模式執行：請先 `bun run build`，再用編譯後的 dist/taskcli 執行 install-bin",
     );

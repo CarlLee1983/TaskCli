@@ -172,7 +172,7 @@ async function main(): Promise<void> {
       }
       case "install-bin": {
         const { values } = parseArgs({ args: rest, options: { dest: { type: "string" } }, allowPositionals: true });
-        process.stdout.write(`${runInstallBin({ dest: values.dest }, process.execPath)}\n`);
+        process.stdout.write(`${runInstallBin({ dest: values.dest }, process.execPath, Bun.main)}\n`);
         return;
       }
       case "skill": {
