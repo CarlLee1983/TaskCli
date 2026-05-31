@@ -6,10 +6,12 @@ import { serializeTask } from "../model/frontmatter";
 import { nextId } from "../storage/ids";
 import { loadConfig } from "../storage/config";
 import { nowIso } from "../model/clock";
+import { appendHistoryEvent, listHistoryEvents, nextHistoryEventId } from "../storage/history";
 import {
   parseEnum, parseTags, parseDue, parseDependsOn,
   TASK_TYPES, TASK_STATUSES, PRIORITIES,
   type Task,
+  type TaskStatus,
 } from "../model/types";
 
 export interface ListOpts extends TaskFilter {
@@ -115,6 +117,20 @@ export interface UpdateOpts {
   now?: () => string;
 }
 
+function appendStatusChangeHistory(root: string, taskId: string, from: TaskStatus, to: TaskStatus, created: string): void {
+  if (from === to) return;
+  const existing = listHistoryEvents(root, taskId);
+  appendHistoryEvent(root, {
+    id: nextHistoryEventId(existing),
+    task_id: taskId,
+    type: "status_change",
+    created,
+    title: `${from} -> ${to}`,
+    body: "",
+    meta: { from, to },
+  }, taskId);
+}
+
 export function runUpdate(root: string, id: string, opts: UpdateOpts): string {
   const t = readTask(root, id);
   let tags = t.tags;
@@ -127,11 +143,14 @@ export function runUpdate(root: string, id: string, opts: UpdateOpts): string {
   // 空陣列正規化為 undefined，使 frontmatter 不輸出 depends_on
   const depends_on = deps && deps.length > 0 ? deps : undefined;
 
+  const nextStatus = opts.status ? parseEnum("status", opts.status, TASK_STATUSES) : t.status;
+  const updatedAt = (opts.now ?? nowIso)();
+
   const updated: Task = {
     ...t,
     title: opts.title ?? t.title,
     type: opts.type ? parseEnum("type", opts.type, TASK_TYPES) : t.type,
-    status: opts.status ? parseEnum("status", opts.status, TASK_STATUSES) : t.status,
+    status: nextStatus,
     priority: opts.priority ? parseEnum("priority", opts.priority, PRIORITIES) : t.priority,
     tags,
     body: opts.body !== undefined ? opts.body : t.body,
@@ -140,9 +159,10 @@ export function runUpdate(root: string, id: string, opts: UpdateOpts): string {
     due: opts.due !== undefined ? parseDue(opts.due) : t.due,
     assignee: opts.assignee !== undefined ? (opts.assignee || undefined) : t.assignee,
     estimate: opts.estimate !== undefined ? (opts.estimate || undefined) : t.estimate,
-    updated: (opts.now ?? nowIso)(),
+    updated: updatedAt,
   };
   writeTask(root, updated);
+  appendStatusChangeHistory(root, id, t.status, updated.status, updatedAt);
   return `已更新 ${id}`;
 }
 

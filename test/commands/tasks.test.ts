@@ -7,6 +7,7 @@ import { writeTask, readTask } from "../../src/storage/tasks";
 import {
   runList, runShow, runUpdate, runDone, runRm, runAdd, runNext,
 } from "../../src/commands/tasks";
+import { listHistoryEvents } from "../../src/storage/history";
 import type { Task } from "../../src/model/types";
 
 function setup(): string {
@@ -188,4 +189,44 @@ test("next 排除 blocked task 並依狀態與優先序排序", () => {
   writeTask(root, task("T-003", { status: "in_progress", priority: "low" }));
   const parsed = JSON.parse(runNext(root, { json: true, limit: 2 }));
   expect(parsed.map((t: Task) => t.id)).toEqual(["T-003", "T-002"]);
+});
+
+test("update --status appends status_change history only when status changes", () => {
+  const root = setup();
+  writeTask(root, task("T-001", { status: "todo" }));
+  runUpdate(root, "T-001", {
+    status: "in_progress",
+    now: () => "2026-05-31T09:00:00+08:00",
+  });
+  let events = listHistoryEvents(root, "T-001");
+  expect(events).toHaveLength(1);
+  expect(events[0]).toMatchObject({
+    id: "E-001",
+    task_id: "T-001",
+    type: "status_change",
+    created: "2026-05-31T09:00:00+08:00",
+    title: "todo -> in_progress",
+    body: "",
+    meta: { from: "todo", to: "in_progress" },
+  });
+
+  runUpdate(root, "T-001", {
+    status: "in_progress",
+    now: () => "2026-05-31T09:05:00+08:00",
+  });
+  events = listHistoryEvents(root, "T-001");
+  expect(events).toHaveLength(1);
+});
+
+test("done appends status_change history", () => {
+  const root = setup();
+  writeTask(root, task("T-001", { status: "in_progress" }));
+  runDone(root, "T-001", { now: () => "2026-05-31T09:00:00+08:00" });
+  const events = listHistoryEvents(root, "T-001");
+  expect(events).toHaveLength(1);
+  expect(events[0]).toMatchObject({
+    type: "status_change",
+    title: "in_progress -> done",
+    meta: { from: "in_progress", to: "done" },
+  });
 });
