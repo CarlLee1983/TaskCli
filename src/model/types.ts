@@ -99,3 +99,81 @@ export function parseTags(input: unknown): string[] {
   }
   return out;
 }
+
+export const TASK_HISTORY_EVENT_TYPES = [
+  "note",
+  "decision",
+  "status_change",
+  "verification",
+  "source",
+] as const;
+export type TaskHistoryEventType = (typeof TASK_HISTORY_EVENT_TYPES)[number];
+
+export const MANUAL_TASK_HISTORY_EVENT_TYPES = [
+  "note",
+  "decision",
+  "verification",
+  "source",
+] as const;
+export type ManualTaskHistoryEventType = (typeof MANUAL_TASK_HISTORY_EVENT_TYPES)[number];
+
+export interface TaskHistoryEvent {
+  id: string;
+  task_id: string;
+  type: TaskHistoryEventType;
+  created: string;
+  author?: string;
+  title?: string;
+  body: string;
+  meta?: Record<string, string>;
+}
+
+export function parseHistoryEventType(input: unknown): TaskHistoryEventType {
+  return parseEnum("history type", input, TASK_HISTORY_EVENT_TYPES);
+}
+
+export function parseManualHistoryEventType(input: unknown): ManualTaskHistoryEventType {
+  return parseEnum("history type", input, MANUAL_TASK_HISTORY_EVENT_TYPES);
+}
+
+function parseOptionalString(field: string, input: unknown): string | undefined {
+  if (input == null) return undefined;
+  if (typeof input !== "string") throw new Error(`欄位 ${field} 需為字串`);
+  return input === "" ? undefined : input;
+}
+
+function parseHistoryMeta(input: unknown): Record<string, string> | undefined {
+  if (input == null) return undefined;
+  if (typeof input !== "object" || Array.isArray(input)) throw new Error("欄位 meta 需為物件");
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+    if (typeof v !== "string") throw new Error(`欄位 meta.${k} 需為字串`);
+    out[k] = v;
+  }
+  return out;
+}
+
+export function parseHistoryEvent(input: unknown): TaskHistoryEvent {
+  if (typeof input !== "object" || input == null || Array.isArray(input)) {
+    throw new Error("history event 需為物件");
+  }
+  const obj = input as Record<string, unknown>;
+  const id = parseOptionalString("id", obj.id);
+  const task_id = parseOptionalString("task_id", obj.task_id);
+  const created = parseOptionalString("created", obj.created);
+  if (!id || !/^E-\d+$/.test(id)) throw new Error(`欄位 id 不合法：${String(obj.id)}，需為 E-NNN`);
+  if (!task_id || !/^T-\d+$/.test(task_id)) throw new Error(`欄位 task_id 不合法：${String(obj.task_id)}，需為 T-NNN`);
+  if (!created) throw new Error("欄位 created 需為非空字串");
+  const body = obj.body == null ? "" : obj.body;
+  if (typeof body !== "string") throw new Error("欄位 body 需為字串");
+  return {
+    id,
+    task_id,
+    type: parseHistoryEventType(obj.type),
+    created,
+    author: parseOptionalString("author", obj.author),
+    title: parseOptionalString("title", obj.title),
+    body,
+    meta: parseHistoryMeta(obj.meta),
+  };
+}

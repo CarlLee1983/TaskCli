@@ -10,6 +10,9 @@ export function tasksDir(root: string): string {
 export function draftsDir(root: string): string {
   return join(root, ".taskcli", "drafts");
 }
+export function historyDir(root: string): string {
+  return join(root, ".taskcli", "history");
+}
 export function configPath(root: string): string {
   return join(root, ".taskcli", "config.json");
 }
