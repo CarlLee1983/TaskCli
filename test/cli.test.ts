@@ -156,3 +156,59 @@ test("--help 含 examples", async () => {
   expect(res.stdout).toContain("Examples");
   expect(res.stdout).toContain("taskcli add");
 });
+
+
+test("history add/list 經 CLI 追加並讀取 history", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-hist-"));
+  await run(root, ["init"]);
+  await run(root, ["add", "需要歷程"]);
+
+  const add = await run(root, [
+    "history", "add", "T-001",
+    "--type", "note",
+    "--title", "觀察",
+    "--body", "可以追蹤歷程",
+    "--author", "agent",
+  ]);
+  expect(add.code).toBe(0);
+  expect(add.stdout).toContain("E-001");
+
+  const list = await run(root, ["history", "list", "T-001", "--json"]);
+  expect(list.code).toBe(0);
+  const events = JSON.parse(list.stdout);
+  expect(events[0]).toMatchObject({ type: "note", title: "觀察", author: "agent" });
+});
+
+test("history add --body-file 經 CLI 讀取檔案", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-hist-file-"));
+  await run(root, ["init"]);
+  await run(root, ["add", "檔案歷程"]);
+  const bodyFile = join(root, "note.md");
+  await Bun.write(bodyFile, "from file\n");
+
+  const add = await run(root, [
+    "history", "add", "T-001",
+    "--type", "source",
+    "--title", "來源摘要",
+    "--body-file", bodyFile,
+  ]);
+  expect(add.code).toBe(0);
+  const list = await run(root, ["history", "list", "T-001", "--json"]);
+  expect(JSON.parse(list.stdout)[0].body).toBe("from file\n");
+});
+
+test("history view 未提供 task id 時給錯誤", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-hist-view-"));
+  await run(root, ["init"]);
+  const res = await run(root, ["history", "view"]);
+  expect(res.code).not.toBe(0);
+  expect(res.stderr).toContain("history view 需要 <task-id>");
+});
+
+test("--help 含 history examples", async () => {
+  const cwd = mkdtempSync(join(tmpdir(), "cli-help-history-"));
+  const res = await run(cwd, ["--help"]);
+  expect(res.code).toBe(0);
+  expect(res.stdout).toContain("history add");
+  expect(res.stdout).toContain("history view");
+});

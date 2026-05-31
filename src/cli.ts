@@ -10,6 +10,8 @@ import { startReviewServer } from "./review/server";
 import { runSkillInstall } from "./commands/skill";
 import { runInstallBin } from "./commands/installBin";
 import { runImport } from "./commands/import";
+import { runHistoryAdd, runHistoryList } from "./commands/history";
+import { startHistoryServer } from "./history/server";
 import type { FetchOpts } from "./integrations/github";
 import type { TaskType, TaskStatus, Priority } from "./model/types";
 
@@ -29,6 +31,9 @@ const USAGE = `usage: taskcli <command> [options]
   done <id>                           標記完成
   next [--limit n --json]             顯示下一個可執行 task
   rm <id>                             刪除 task
+  history add <task-id> --type <type> [--title --body --body-file --author]   追加 task 歷程
+  history list <task-id> [--json]       列出 task 歷程
+  history view <task-id> [--port n] [--open]   啟動只讀歷程頁
   import github [<n>] [--repo --state --label --limit --dry-run]   從 GitHub Issues 匯入
   install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
   skill install [--dest <dir>]        把 SKILL.md 安裝到 ~/.claude/skills/taskcli/
@@ -38,6 +43,8 @@ Examples:
   taskcli list --status todo --query github --sort priority --desc
   taskcli next --limit 3
   taskcli update T-001 --body-file notes.md
+  taskcli history add T-001 --type decision --title "採 JSONL" --body "保留 task markdown 相容"
+  taskcli history view T-001 --open
 `;
 
 async function readStdin(): Promise<string> {
@@ -143,7 +150,7 @@ async function main(): Promise<void> {
         if (values.body !== undefined && values["body-file"] !== undefined) fail("--body 與 --body-file 不可同時使用");
         const body = values["body-file"] ? await Bun.file(values["body-file"] as string).text() : values.body;
         process.stdout.write(`${runAdd(requireRoot(cwd), title, {
-          type: values.type, priority: values.priority, tags: values.tag, body,
+          type: values.type, priority: values.priority, tags: values.tag,
           body, due: values.due, assignee: values.assignee, estimate: values.estimate,
           addDep: values["add-dep"], json: values.json,
         })}\n`);
@@ -227,6 +234,62 @@ async function main(): Promise<void> {
         const id = positionals[0];
         if (!id) fail("rm 需要 <id>");
         process.stdout.write(`${runRm(requireRoot(cwd), id)}\n`);
+        return;
+      }
+      case "history": {
+        const [sub, ...sr] = rest;
+        if (sub === "add") {
+          const { values, positionals } = parseArgs({
+            args: sr,
+            options: {
+              type: { type: "string" },
+              title: { type: "string" },
+              body: { type: "string" },
+              "body-file": { type: "string" },
+              author: { type: "string" },
+            },
+            allowPositionals: true,
+          });
+          const id = positionals[0];
+          if (!id) fail("history add 需要 <task-id>");
+          if (values.body !== undefined && values["body-file"] !== undefined) fail("--body 與 --body-file 不可同時使用");
+          process.stdout.write(`${runHistoryAdd(requireRoot(cwd), id, {
+            type: values.type,
+            title: values.title,
+            body: values.body,
+            bodyFile: values["body-file"],
+            author: values.author,
+          })}\n`);
+          return;
+        }
+        if (sub === "list") {
+          const { values, positionals } = parseArgs({
+            args: sr,
+            options: { json: { type: "boolean" } },
+            allowPositionals: true,
+          });
+          const id = positionals[0];
+          if (!id) fail("history list 需要 <task-id>");
+          process.stdout.write(`${runHistoryList(requireRoot(cwd), id, { json: values.json })}\n`);
+          return;
+        }
+        if (sub === "view") {
+          const { values, positionals } = parseArgs({
+            args: sr,
+            options: { port: { type: "string" }, open: { type: "boolean" } },
+            allowPositionals: true,
+          });
+          const id = positionals[0];
+          if (!id) fail("history view 需要 <task-id>");
+          const srv = startHistoryServer(requireRoot(cwd), id, {
+            port: values.port ? Number(values.port) : undefined,
+          });
+          process.stdout.write(`歷程頁已啟動：${srv.url}\n按 Ctrl+C 結束。\n`);
+          if (values.open) Bun.spawn(["open", srv.url]);
+          await new Promise<void>(() => {});
+          return;
+        }
+        fail(`未知 history 子指令：${sub ?? ""}\n${USAGE}`);
         return;
       }
       case "import": {
