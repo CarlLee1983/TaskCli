@@ -2,6 +2,20 @@
 
 所有重要變更會記錄在此檔。
 
+## v0.3.0 - Task history
+
+### Added
+
+- 新增 per-task append-only history JSONL sidecar（`.taskcli/history/<task-id>.jsonl`）。
+- 新增 `taskcli history add/list/view`。
+- `update --status` / `done` 在狀態實際改變時自動記錄 `status_change`。
+- 新增只讀 HTML task timeline view（`history view`）。
+
+### Docs
+
+- 新增 `docs/releases/v0.3.0-task-history.md` 交付說明。
+- README 補上 task history 區段、指令一覽與範例。
+
 ## v0.2.0 - Unreleased
 
 ### Added

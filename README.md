@@ -62,6 +62,18 @@ updated: "2026-05-30T10:00:00+08:00"
 描述內文
 ```
 
+## task history（`.taskcli/history/T-001.jsonl`）
+
+TaskCli 可為每個 task 保留 append-only 開發歷程，不改動 task markdown 本體：
+
+````jsonl
+{"id":"E-001","task_id":"T-001","type":"source","created":"2026-05-30T10:00:00+08:00","title":"Agent plan","body":"由 agent plan 拆出此 task"}
+{"id":"E-002","task_id":"T-001","type":"status_change","created":"2026-05-30T10:30:00+08:00","title":"todo -> in_progress","body":"","meta":{"from":"todo","to":"in_progress"}}
+{"id":"E-003","task_id":"T-001","type":"verification","created":"2026-05-30T11:00:00+08:00","author":"agent","body":"bun test passed"}
+````
+
+手動可追加 `note`、`decision`、`verification`、`source`。`status_change` 由 `update --status` / `done` 自動產生。
+
 ## 指令一覽
 
 | 指令 | 說明 |
@@ -75,6 +87,9 @@ updated: "2026-05-30T10:00:00+08:00"
 | `add <title> [--type --priority --tag --body --json]` | 快速建立單一正式 task |
 | `show <id> [--json]` / `done <id>` / `rm <id>` | 管理 task |
 | `next [--limit n --json]` | 顯示下一個可執行 task |
+| `history add <task-id> --type note\|decision\|verification\|source [--title --body --body-file --author]` | 追加 task 開發歷程 |
+| `history list <task-id> [--json]` | 列出 task 歷程 |
+| `history view <task-id> [--port n] [--open]` | 啟動單一 task 只讀歷程頁 |
 | `import github [<n>] [--repo --state --label --limit --dry-run]` | 從 GitHub Issues 匯入 |
 | `update <id> [--title --type --status --priority --add-tag --rm-tag` `--body --body-file --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]` | 改欄位（scalar 給空字串可清除） |
 | `--version` | 顯示版本 |
@@ -90,6 +105,9 @@ taskcli next --limit 3
 taskcli update T-001 --body "驗收條件..."      # 直接覆寫 task 內文
 taskcli update T-001 --body-file notes.md      # 從檔案讀取 task 內文
 taskcli update T-001 --due "" --assignee "" --estimate ""  # 清除 scalar 選填欄位
+taskcli history add T-001 --type decision --title "採 sidecar JSONL" --body "保持 task markdown 相容"
+taskcli history add T-001 --type verification --author agent --body "bun test passed"
+taskcli history view T-001 --open
 ```
 
 ## 從 GitHub Issues 匯入
