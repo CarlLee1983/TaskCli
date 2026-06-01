@@ -1,4 +1,4 @@
-export function nextId(prefix: "T" | "D", existingIds: string[]): string {
+export function nextId(prefix: "T" | "D" | "TR", existingIds: string[]): string {
   let max = 0;
   const re = new RegExp(`^${prefix}-(\\d+)$`);
   for (const id of existingIds) {

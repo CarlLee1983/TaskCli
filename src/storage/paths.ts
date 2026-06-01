@@ -13,6 +13,9 @@ export function draftsDir(root: string): string {
 export function historyDir(root: string): string {
   return join(root, ".taskcli", "history");
 }
+export function transcriptsDir(root: string): string {
+  return join(root, ".taskcli", "transcripts");
+}
 export function configPath(root: string): string {
   return join(root, ".taskcli", "config.json");
 }
