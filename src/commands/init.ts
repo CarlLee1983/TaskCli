@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { configPath, tasksDir, draftsDir, taskcliDir } from "../storage/paths";
+import { configPath, tasksDir, draftsDir, taskcliDir, transcriptsDir } from "../storage/paths";
 import { ensureDir, atomicWrite } from "../storage/io";
 import { TASK_TYPES, PRIORITIES } from "../model/types";
 
@@ -7,12 +7,17 @@ export function runInit(cwd: string): string {
   const existed = existsSync(taskcliDir(cwd));
   ensureDir(tasksDir(cwd));
   ensureDir(draftsDir(cwd));
+  ensureDir(transcriptsDir(cwd));
   if (!existsSync(configPath(cwd))) {
     const cfg = {
       taskTypes: [...TASK_TYPES],
       priorities: [...PRIORITIES],
       defaultType: "feature",
       defaultPriority: "med",
+      transcript: {
+        defaultLanguage: "zh-TW",
+        providers: {},
+      },
     };
     atomicWrite(configPath(cwd), `${JSON.stringify(cfg, null, 2)}\n`);
   }

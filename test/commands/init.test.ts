@@ -9,8 +9,11 @@ test("init 建立 .taskcli 骨架與 config", () => {
   const msg = runInit(root);
   expect(existsSync(join(root, ".taskcli/tasks"))).toBe(true);
   expect(existsSync(join(root, ".taskcli/drafts"))).toBe(true);
+  expect(existsSync(join(root, ".taskcli/transcripts"))).toBe(true);
   const cfg = JSON.parse(readFileSync(join(root, ".taskcli/config.json"), "utf8"));
   expect(cfg.taskTypes).toContain("feature");
+  expect(cfg.transcript.defaultLanguage).toBe("zh-TW");
+  expect(cfg.transcript.providers).toEqual({});
   expect(msg).toContain(".taskcli");
 });
 
