@@ -62,6 +62,40 @@ updated: "2026-05-30T10:00:00+08:00"
 描述內文
 ```
 
+## transcript inbox（語音 / 文字稿前置整理）
+
+TaskCli 可以把會議錄音、口頭 memo 或外部工具產生的文字稿先存成 transcript record。Transcript 不是正式 task；agent 讀取 transcript 後，再整理成 `draft create` JSON，最後仍走 `review → finalize`。
+
+```bash
+# 匯入既有文字稿
+taskcli transcript add --from-file meeting.md --title "產品週會"
+
+# 透過 provider command 轉錄音檔
+taskcli transcript import meeting.m4a --provider local-whisper --language zh-TW
+
+# 給 agent 讀取
+taskcli transcript list --json
+taskcli transcript show TR-001 --json
+```
+
+Provider 設定放在 `.taskcli/config.json`：
+
+```json
+{
+  "transcript": {
+    "defaultProvider": "local-whisper",
+    "defaultLanguage": "zh-TW",
+    "providers": {
+      "local-whisper": {
+        "command": "whisper-cli {input} --language {language} --output -"
+      }
+    }
+  }
+}
+```
+
+Provider command 必須把文字稿輸出到 stdout。API key、模型安裝、雲端服務設定都由外部 command 或 script 負責。
+
 ## task history（`.taskcli/history/T-001.jsonl`）
 
 TaskCli 可為每個 task 保留 append-only 開發歷程，不改動 task markdown 本體：
@@ -90,6 +124,9 @@ TaskCli 可為每個 task 保留 append-only 開發歷程，不改動 task markd
 | `history add <task-id> --type note\|decision\|verification\|source [--title --body --body-file --author]` | 追加 task 開發歷程 |
 | `history list <task-id> [--json]` | 列出 task 歷程 |
 | `history view <task-id> [--port n] [--open]` | 啟動單一 task 只讀歷程頁 |
+| `transcript import <audio-file> [--provider --title --language]` | 使用設定的 provider command 轉錄音檔並存成 transcript |
+| `transcript add --from-file <file> [--title --language]` | 匯入既有文字稿 |
+| `transcript list/show/rm` | 列出、檢視、刪除 transcript |
 | `import github [<n>] [--repo --state --label --limit --dry-run]` | 從 GitHub Issues 匯入 |
 | `update <id> [--title --type --status --priority --add-tag --rm-tag` `--body --body-file --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]` | 改欄位（scalar 給空字串可清除） |
 | `--version` | 顯示版本 |
