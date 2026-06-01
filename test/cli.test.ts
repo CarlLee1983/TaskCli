@@ -212,3 +212,79 @@ test("--help 含 history examples", async () => {
   expect(res.stdout).toContain("history add");
   expect(res.stdout).toContain("history view");
 });
+
+test("transcript add/list/show 經 CLI 運作", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-tr-"));
+  await run(root, ["init"]);
+  const source = join(root, "memo.md");
+  await Bun.write(source, "口頭記錄內容\n");
+
+  const add = await run(root, ["transcript", "add", "--from-file", source, "--title", "口頭記錄"]);
+  expect(add.code).toBe(0);
+  expect(add.stdout).toContain("TR-001");
+
+  const list = await run(root, ["transcript", "list", "--json"]);
+  expect(list.code).toBe(0);
+  expect(JSON.parse(list.stdout)[0]).toMatchObject({ id: "TR-001", title: "口頭記錄" });
+  expect(JSON.parse(list.stdout)[0].body).toBeUndefined();
+
+  const show = await run(root, ["transcript", "show", "TR-001", "--json"]);
+  expect(show.code).toBe(0);
+  expect(JSON.parse(show.stdout).body).toBe("口頭記錄內容\n");
+});
+
+test("transcript import 經 CLI 使用 fake provider", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-tr-import-"));
+  await run(root, ["init"]);
+  const audio = join(root, "meeting.m4a");
+  await Bun.write(audio, "fake audio");
+  await Bun.write(join(root, ".taskcli/config.json"), JSON.stringify({
+    transcript: {
+      defaultProvider: "fake",
+      defaultLanguage: "zh-TW",
+      providers: {
+        fake: { command: "printf 'cli transcript for %s' {input}" },
+      },
+    },
+  }));
+
+  const imported = await run(root, ["transcript", "import", audio, "--title", "會議"]);
+  expect(imported.code).toBe(0);
+  expect(imported.stdout).toContain("TR-001");
+
+  const show = await run(root, ["transcript", "show", "TR-001", "--json"]);
+  expect(JSON.parse(show.stdout)).toMatchObject({ title: "會議", provider: "fake" });
+  expect(JSON.parse(show.stdout).body).toContain("cli transcript for");
+});
+
+test("transcript rm 經 CLI 刪除", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-tr-rm-"));
+  await run(root, ["init"]);
+  const source = join(root, "memo.md");
+  await Bun.write(source, "body");
+  await run(root, ["transcript", "add", "--from-file", source]);
+
+  const rm = await run(root, ["transcript", "rm", "TR-001"]);
+  expect(rm.code).toBe(0);
+  expect(rm.stdout).toContain("TR-001");
+
+  const show = await run(root, ["transcript", "show", "TR-001"]);
+  expect(show.code).not.toBe(0);
+  expect(show.stderr).toContain("找不到 transcript");
+});
+
+test("transcript 缺少子指令顯示用法並非零退出", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-tr-none-"));
+  await run(root, ["init"]);
+  const res = await run(root, ["transcript"]);
+  expect(res.code).not.toBe(0);
+  expect(res.stderr.toLowerCase()).toContain("usage");
+});
+
+test("--help 含 transcript commands", async () => {
+  const cwd = mkdtempSync(join(tmpdir(), "cli-help-tr-"));
+  const res = await run(cwd, ["--help"]);
+  expect(res.code).toBe(0);
+  expect(res.stdout).toContain("transcript import");
+  expect(res.stdout).toContain("transcript show");
+});

@@ -11,6 +11,13 @@ import { runSkillInstall } from "./commands/skill";
 import { runInstallBin } from "./commands/installBin";
 import { runImport } from "./commands/import";
 import { runHistoryAdd, runHistoryList } from "./commands/history";
+import {
+  runTranscriptAdd,
+  runTranscriptImport,
+  runTranscriptList,
+  runTranscriptRm,
+  runTranscriptShow,
+} from "./commands/transcript";
 import { startHistoryServer } from "./history/server";
 import type { FetchOpts } from "./integrations/github";
 import type { TaskType, TaskStatus, Priority } from "./model/types";
@@ -34,6 +41,11 @@ const USAGE = `usage: taskcli <command> [options]
   history add <task-id> --type <type> [--title --body --body-file --author]   追加 task 歷程
   history list <task-id> [--json]       列出 task 歷程
   history view <task-id> [--port n] [--open]   啟動只讀歷程頁
+  transcript import <audio-file> [--provider --title --language]   provider command 轉錄音檔並存入 transcript inbox
+  transcript add --from-file <file> [--title --language]           匯入既有文字稿
+  transcript list [--json]            列出 transcript
+  transcript show <id> [--json]       顯示 transcript
+  transcript rm <id>                  刪除 transcript
   import github [<n>] [--repo --state --label --limit --dry-run]   從 GitHub Issues 匯入
   install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
   skill install [--dest <dir>]        把 SKILL.md 安裝到 ~/.claude/skills/taskcli/
@@ -45,6 +57,9 @@ Examples:
   taskcli update T-001 --body-file notes.md
   taskcli history add T-001 --type decision --title "採 JSONL" --body "保留 task markdown 相容"
   taskcli history view T-001 --open
+  taskcli transcript add --from-file meeting.md --title "產品週會"
+  taskcli transcript import meeting.m4a --provider local-whisper --language zh-TW
+  taskcli transcript show TR-001 --json
 `;
 
 async function readStdin(): Promise<string> {
@@ -290,6 +305,74 @@ async function main(): Promise<void> {
           return;
         }
         fail(`未知 history 子指令：${sub ?? ""}\n${USAGE}`);
+        return;
+      }
+      case "transcript": {
+        const [sub, ...sr] = rest;
+        if (sub === "add") {
+          const { values } = parseArgs({
+            args: sr,
+            options: {
+              "from-file": { type: "string" },
+              title: { type: "string" },
+              language: { type: "string" },
+            },
+            allowPositionals: true,
+          });
+          process.stdout.write(`${runTranscriptAdd(requireRoot(cwd), {
+            fromFile: values["from-file"],
+            title: values.title,
+            language: values.language,
+          })}\n`);
+          return;
+        }
+        if (sub === "import") {
+          const { values, positionals } = parseArgs({
+            args: sr,
+            options: {
+              provider: { type: "string" },
+              title: { type: "string" },
+              language: { type: "string" },
+            },
+            allowPositionals: true,
+          });
+          const audioFile = positionals[0];
+          if (!audioFile) fail("transcript import 需要 <audio-file>");
+          process.stdout.write(`${await runTranscriptImport(requireRoot(cwd), audioFile, {
+            provider: values.provider,
+            title: values.title,
+            language: values.language,
+          })}\n`);
+          return;
+        }
+        if (sub === "list") {
+          const { values } = parseArgs({
+            args: sr,
+            options: { json: { type: "boolean" } },
+            allowPositionals: true,
+          });
+          process.stdout.write(`${runTranscriptList(requireRoot(cwd), { json: values.json })}\n`);
+          return;
+        }
+        if (sub === "show") {
+          const { values, positionals } = parseArgs({
+            args: sr,
+            options: { json: { type: "boolean" } },
+            allowPositionals: true,
+          });
+          const id = positionals[0];
+          if (!id) fail("transcript show 需要 <id>");
+          process.stdout.write(`${runTranscriptShow(requireRoot(cwd), id, { json: values.json })}\n`);
+          return;
+        }
+        if (sub === "rm") {
+          const { positionals } = parseArgs({ args: sr, options: {}, allowPositionals: true });
+          const id = positionals[0];
+          if (!id) fail("transcript rm 需要 <id>");
+          process.stdout.write(`${runTranscriptRm(requireRoot(cwd), id)}\n`);
+          return;
+        }
+        fail(`未知 transcript 子指令：${sub ?? ""}\n${USAGE}`);
         return;
       }
       case "import": {
