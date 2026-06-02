@@ -122,8 +122,76 @@ function checkTasks(loaded: LoadedTask[]): CheckResult {
   }
   return { name: "tasks", findings };
 }
-function checkDeps(_loaded: LoadedTask[]): CheckResult {
-  return { name: "deps", findings: [] };
+function checkDeps(loaded: LoadedTask[]): CheckResult {
+  const findings: Finding[] = [];
+  const tasks = loaded.filter((l) => l.task).map((l) => l.task!) as Task[];
+  const byId = new Map<string, Task>();
+  for (const t of tasks) if (!byId.has(t.id)) byId.set(t.id, t);
+
+  for (const t of tasks) {
+    for (const dep of t.depends_on ?? []) {
+      const target = byId.get(dep);
+      if (!target) {
+        findings.push({
+          code: "dep.dangling",
+          severity: "error",
+          target: t.id,
+          message: `懸空相依 ${dep}`,
+          fixable: true,
+        });
+      } else if (target.status === "cancelled") {
+        findings.push({
+          code: "dep.on_cancelled",
+          severity: "warn",
+          target: t.id,
+          message: `相依於已取消的 ${dep}`,
+          fixable: false,
+        });
+      }
+    }
+  }
+
+  // 循環偵測：DFS 白/灰/黑著色，只走存在 task 間的邊
+  const WHITE = 0;
+  const GRAY = 1;
+  const BLACK = 2;
+  const color = new Map<string, number>();
+  for (const id of byId.keys()) color.set(id, WHITE);
+  const stack: string[] = [];
+  const reported = new Set<string>();
+
+  function dfs(id: string): void {
+    color.set(id, GRAY);
+    stack.push(id);
+    for (const dep of byId.get(id)!.depends_on ?? []) {
+      if (!byId.has(dep)) continue;
+      if (color.get(dep) === GRAY) {
+        const start = stack.indexOf(dep);
+        const cyc = stack.slice(start).concat(dep);
+        const key = [...new Set(cyc)].sort().join(",");
+        if (!reported.has(key)) {
+          reported.add(key);
+          findings.push({
+            code: "dep.cycle",
+            severity: "error",
+            target: cyc[0]!,
+            message: `循環相依：${cyc.join(" → ")}`,
+            fixable: false,
+          });
+        }
+      } else if (color.get(dep) === WHITE) {
+        dfs(dep);
+      }
+    }
+    stack.pop();
+    color.set(id, BLACK);
+  }
+
+  for (const id of [...byId.keys()].sort()) {
+    if (color.get(id) === WHITE) dfs(id);
+  }
+
+  return { name: "deps", findings };
 }
 function checkSidecars(_root: string, _loaded: LoadedTask[]): CheckResult {
   return { name: "sidecars", findings: [] };

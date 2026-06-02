@@ -102,3 +102,37 @@ test("重複 id → task.duplicate_id（error）", () => {
   expect(f!.fixable).toBe(false);
   expect(report.ok).toBe(false);
 });
+
+test("懸空相依 → dep.dangling（error, fixable）", () => {
+  const root = makeRepo();
+  writeTaskFile(root, "T-001", validTask("T-001", `depends_on: ["T-099"]\n`));
+  const report = runChecks(root);
+  const f = report.checks.find((c) => c.name === "deps")!.findings
+    .find((x) => x.code === "dep.dangling");
+  expect(f).toBeDefined();
+  expect(f!.fixable).toBe(true);
+});
+
+test("循環相依 → dep.cycle（error）", () => {
+  const root = makeRepo();
+  writeTaskFile(root, "T-001", validTask("T-001", `depends_on: ["T-002"]\n`));
+  writeTaskFile(root, "T-002", validTask("T-002", `depends_on: ["T-001"]\n`));
+  const report = runChecks(root);
+  const f = report.checks.find((c) => c.name === "deps")!.findings
+    .find((x) => x.code === "dep.cycle");
+  expect(f).toBeDefined();
+  expect(f!.message).toContain("→");
+});
+
+test("相依於已取消 task → dep.on_cancelled（warn）", () => {
+  const root = makeRepo();
+  writeTaskFile(root, "T-001", validTask("T-001", `depends_on: ["T-002"]\n`));
+  writeTaskFile(
+    root,
+    "T-002",
+    validTask("T-002").replace(`status: "todo"`, `status: "cancelled"`),
+  );
+  const report = runChecks(root);
+  const deps = report.checks.find((c) => c.name === "deps")!.findings;
+  expect(deps.find((x) => x.code === "dep.on_cancelled")).toBeDefined();
+});
