@@ -1,7 +1,7 @@
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { listTaskIds, taskPath } from "../storage/tasks";
-import { tasksDir, draftsDir, transcriptsDir, configPath, historyDir } from "../storage/paths";
-import { listHistoryEvents } from "../storage/history";
+import { tasksDir, draftsDir, transcriptsDir, configPath } from "../storage/paths";
+import { listHistoryEvents, listHistoryTaskIds } from "../storage/history";
 import { listTranscriptIds, transcriptPath } from "../storage/transcripts";
 import { parseTranscript } from "../model/transcript";
 import { parseTask } from "../model/frontmatter";
@@ -207,35 +207,32 @@ function checkSidecars(root: string, loaded: LoadedTask[]): CheckResult {
   const findings: Finding[] = [];
   const existingIds = new Set(loaded.filter((l) => l.task).map((l) => l.task!.id));
 
-  const hDir = historyDir(root);
-  if (existsSync(hDir)) {
-    const files = readdirSync(hDir).filter((x) => x.endsWith(".jsonl")).sort();
-    for (const f of files) {
-      const taskId = f.slice(0, -".jsonl".length);
-      try {
-        listHistoryEvents(root, taskId);
-      } catch (e) {
-        findings.push({
-          code: "history.parse_failed",
-          severity: "error",
-          target: f,
-          message: e instanceof Error ? e.message : String(e),
-          fixable: false,
-        });
-        continue;
-      }
-      if (!existingIds.has(taskId)) {
-        findings.push({
-          code: "history.orphan",
-          severity: "warn",
-          target: f,
-          message: `history sidecar 對應的 task ${taskId} 不存在`,
-          fixable: false,
-        });
-      }
+  for (const taskId of listHistoryTaskIds(root)) {
+    const file = `${taskId}.jsonl`;
+    try {
+      listHistoryEvents(root, taskId);
+    } catch (e) {
+      findings.push({
+        code: "history.parse_failed",
+        severity: "error",
+        target: file,
+        message: e instanceof Error ? e.message : String(e),
+        fixable: false,
+      });
+      continue;
+    }
+    if (!existingIds.has(taskId)) {
+      findings.push({
+        code: "history.orphan",
+        severity: "warn",
+        target: file,
+        message: `history sidecar 對應的 task ${taskId} 不存在`,
+        fixable: false,
+      });
     }
   }
 
+  // transcript 不做 orphan 檢查：transcript 屬獨立 inbox，可合法存在於任何 task 之前/之後
   for (const id of listTranscriptIds(root)) {
     try {
       parseTranscript(readFileSync(transcriptPath(root, id), "utf8"));

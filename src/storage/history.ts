@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { historyDir } from "./paths";
 import { ensureDir } from "./io";
@@ -6,6 +6,15 @@ import { parseHistoryEvent, type TaskHistoryEvent } from "../model/types";
 
 export function historyPath(root: string, taskId: string): string {
   return join(historyDir(root), `${taskId}.jsonl`);
+}
+
+export function listHistoryTaskIds(root: string): string[] {
+  const dir = historyDir(root);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".jsonl"))
+    .map((f) => f.slice(0, -".jsonl".length))
+    .sort();
 }
 
 export function listHistoryEvents(root: string, taskId: string): TaskHistoryEvent[] {
