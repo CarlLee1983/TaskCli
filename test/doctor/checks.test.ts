@@ -1,3 +1,5 @@
+import { expect, test } from "bun:test";
+import { runChecks } from "../../src/doctor/checks";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -21,9 +23,6 @@ function validTask(id: string, extra = ""): string {
 function codes(report: { checks: { findings: { code: string }[] }[] }): string[] {
   return report.checks.flatMap((c) => c.findings.map((f) => f.code));
 }
-
-import { expect, test } from "bun:test";
-import { runChecks } from "../../src/doctor/checks";
 
 test("乾淨 repo：ok、無 finding", () => {
   const root = makeRepo();

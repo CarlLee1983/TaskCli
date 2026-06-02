@@ -47,7 +47,7 @@ export function runChecks(root: string): DoctorReport {
   for (const c of checks) {
     for (const f of c.findings) {
       if (f.severity === "error") errorCount++;
-      else warnCount++;
+      else if (f.severity === "warn") warnCount++;
     }
   }
   return { ok: errorCount === 0, errorCount, warnCount, checks };
