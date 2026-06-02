@@ -71,6 +71,7 @@ export function applyFixes(root: string, report: DoctorReport): FixOutcome[] {
     }
 
     const oldId = entry.task.id;
+    // 刻意不更新 `updated`：doctor --fix 是無損修復而非語意編輯，保留原時間戳
     const updated: Task = { ...entry.task, id: entry.fileId };
     // Write to FILENAME path to avoid creating stray files
     atomicWrite(taskPath(root, entry.fileId), serializeTask(updated));
@@ -101,6 +102,7 @@ export function applyFixes(root: string, report: DoctorReport): FixOutcome[] {
     if (removed.length === 0) continue; // already cleaned by an earlier iteration
 
     const kept = entry.task.depends_on.filter((d) => declaredIds.has(d));
+    // 同上：保留原 `updated`，修復懸空相依不視為內容變更
     const updated: Task = {
       ...entry.task,
       depends_on: kept.length > 0 ? kept : undefined,
