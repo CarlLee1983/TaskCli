@@ -2,6 +2,20 @@
 
 所有重要變更會記錄在此檔。
 
+## v0.4.0 - Transcript inbox
+
+### Added
+
+- 新增 transcript inbox 儲存層（`.taskcli/transcripts/<TR-NNN>.md`），與 task/draft 分離。
+- 新增 `taskcli transcript add/list/show/rm`，匯入與管理文字稿。
+- 新增 `taskcli transcript import`，以設定的 provider command（`{input}`/`{language}` 樣板、stdout 取文字稿）轉錄音檔。
+- `config`/`init` 支援 `transcript.defaultProvider`、`defaultLanguage` 與 `providers` 設定。
+
+### Docs
+
+- README 補上 transcript inbox 區段、指令一覽與範例。
+- 新增 `docs/superpowers/plans/2026-06-01-taskcli-transcript-inbox.md` 實作計畫。
+
 ## v0.3.0 - Task history
 
 ### Added

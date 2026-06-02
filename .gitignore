@@ -5,3 +5,6 @@ dist/
 
 # taskcli：正式 task 納入版控，草稿為過渡狀態不追蹤
 .taskcli/drafts/
+
+# superpowers 工具暫存（brainstorm / server state）
+.superpowers/
