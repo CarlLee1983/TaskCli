@@ -139,3 +139,31 @@ test("相依於已取消 task → dep.on_cancelled（warn）", () => {
   const deps = report.checks.find((c) => c.name === "deps")!.findings;
   expect(deps.find((x) => x.code === "dep.on_cancelled")).toBeDefined();
 });
+
+test("history sidecar 對應 task 不存在 → history.orphan（warn）", () => {
+  const root = makeRepo();
+  mkdirSync(join(root, ".taskcli/history"), { recursive: true });
+  const ev = { id: "E-001", task_id: "T-099", type: "note", created: "2026-06-02T10:00:00+08:00", body: "x" };
+  writeFileSync(join(root, ".taskcli/history/T-099.jsonl"), `${JSON.stringify(ev)}\n`, "utf8");
+  const report = runChecks(root);
+  const f = report.checks.find((c) => c.name === "sidecars")!.findings
+    .find((x) => x.code === "history.orphan");
+  expect(f).toBeDefined();
+  expect(f!.severity).toBe("warn");
+});
+
+test("history jsonl 壞行 → history.parse_failed（error）", () => {
+  const root = makeRepo();
+  mkdirSync(join(root, ".taskcli/history"), { recursive: true });
+  writeTaskFile(root, "T-001", validTask("T-001"));
+  writeFileSync(join(root, ".taskcli/history/T-001.jsonl"), "not-json\n", "utf8");
+  const report = runChecks(root);
+  expect(codes(report)).toContain("history.parse_failed");
+});
+
+test("transcript 解析失敗 → transcript.parse_failed（error）", () => {
+  const root = makeRepo();
+  writeFileSync(join(root, ".taskcli/transcripts/TR-001.md"), "沒有 frontmatter", "utf8");
+  const report = runChecks(root);
+  expect(codes(report)).toContain("transcript.parse_failed");
+});

@@ -1,6 +1,9 @@
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { listTaskIds, taskPath } from "../storage/tasks";
-import { tasksDir, draftsDir, transcriptsDir, configPath } from "../storage/paths";
+import { tasksDir, draftsDir, transcriptsDir, configPath, historyDir } from "../storage/paths";
+import { listHistoryEvents } from "../storage/history";
+import { listTranscriptIds, transcriptPath } from "../storage/transcripts";
+import { parseTranscript } from "../model/transcript";
 import { parseTask } from "../model/frontmatter";
 import { TASK_TYPES, PRIORITIES } from "../model/types";
 import type { Task } from "../model/types";
@@ -200,8 +203,54 @@ function checkDeps(loaded: LoadedTask[]): CheckResult {
 
   return { name: "deps", findings };
 }
-function checkSidecars(_root: string, _loaded: LoadedTask[]): CheckResult {
-  return { name: "sidecars", findings: [] };
+function checkSidecars(root: string, loaded: LoadedTask[]): CheckResult {
+  const findings: Finding[] = [];
+  const existingIds = new Set(loaded.filter((l) => l.task).map((l) => l.task!.id));
+
+  const hDir = historyDir(root);
+  if (existsSync(hDir)) {
+    const files = readdirSync(hDir).filter((x) => x.endsWith(".jsonl")).sort();
+    for (const f of files) {
+      const taskId = f.slice(0, -".jsonl".length);
+      try {
+        listHistoryEvents(root, taskId);
+      } catch (e) {
+        findings.push({
+          code: "history.parse_failed",
+          severity: "error",
+          target: f,
+          message: e instanceof Error ? e.message : String(e),
+          fixable: false,
+        });
+        continue;
+      }
+      if (!existingIds.has(taskId)) {
+        findings.push({
+          code: "history.orphan",
+          severity: "warn",
+          target: f,
+          message: `history sidecar 對應的 task ${taskId} 不存在`,
+          fixable: false,
+        });
+      }
+    }
+  }
+
+  for (const id of listTranscriptIds(root)) {
+    try {
+      parseTranscript(readFileSync(transcriptPath(root, id), "utf8"));
+    } catch (e) {
+      findings.push({
+        code: "transcript.parse_failed",
+        severity: "error",
+        target: id,
+        message: e instanceof Error ? e.message : String(e),
+        fixable: false,
+      });
+    }
+  }
+
+  return { name: "sidecars", findings };
 }
 
 export function runChecks(root: string): DoctorReport {
