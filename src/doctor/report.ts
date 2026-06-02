@@ -1,6 +1,6 @@
-import type { DoctorReport, Finding, FixOutcome } from "./types";
+import type { DoctorReport, Finding, FixOutcome, Severity } from "./types";
 
-const ICON: Record<string, string> = { error: "✖", warn: "⚠" };
+const ICON: Record<Severity, string> = { error: "✖", warn: "⚠" };
 
 function formatFinding(f: Finding): string {
   const fixTag = f.fixable ? "  [可 --fix]" : "";
@@ -27,6 +27,7 @@ export function formatReport(report: DoctorReport, taskCount: number, fixes?: Fi
     lines.push(`✅ 一切正常（${taskCount} tasks、0 問題）`);
   } else {
     const anyFixable = report.checks.some((c) => c.findings.some((f) => f.fixable));
+    // 兩句中文直接相接（全形句號後接下一句）在排版上是正確的，勿插入空白或換行
     let summary = `摘要：${report.errorCount} error、${report.warnCount} warn。`;
     if (anyFixable) summary += "有可自動修復項，可執行 `taskcli doctor --fix`。";
     lines.push(summary);

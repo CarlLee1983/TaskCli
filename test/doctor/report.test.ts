@@ -25,6 +25,7 @@ test("乾淨報告：顯示一切正常與 task 數", () => {
 test("有問題報告：分組、可 --fix 標記、摘要", () => {
   const out = formatReport(WITH_ERROR, 5);
   expect(out).toContain("▎deps");
+  expect(out).toContain("  ✖ T-001  懸空相依 T-099  [可 --fix]");
   expect(out).toContain("[可 --fix]");
   expect(out).toContain("1 error");
   expect(out).toContain("1 warn");
@@ -42,4 +43,6 @@ test("formatJson：--fix 模式含 fixes 欄位", () => {
     { code: "layout.missing_dir", target: ".taskcli/drafts", action: "建立目錄", applied: true },
   ]));
   expect(json.fixes).toHaveLength(1);
+  expect(json.fixes[0].applied).toBe(true);
+  expect(json.fixes[0].target).toBe(".taskcli/drafts");
 });
