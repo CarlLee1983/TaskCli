@@ -309,6 +309,8 @@ test("doctor：懸空相依回 exit 1，--fix 後回 0", async () => {
   expect(bad.code).toBe(1);
   const fixed = await run(root, ["doctor", "--fix"]);
   expect(fixed.code).toBe(0);
+  expect(fixed.stdout).toContain("移除懸空相依");
+  expect(fixed.stdout).toContain("一切正常");
 });
 
 test("doctor --json：輸出可解析的 DoctorReport", async () => {

@@ -416,6 +416,8 @@ async function main(): Promise<void> {
           json: values.json,
         });
         process.stdout.write(`${output}\n`);
+        // doctor 已將完整報告寫到 stdout；以原始 exitCode 直接退出傳遞診斷結果，
+        // 不走 fail()（避免在已輸出報告後又往 stderr 多印一段訊息）
         if (exitCode !== 0) process.exit(exitCode);
         return;
       }
