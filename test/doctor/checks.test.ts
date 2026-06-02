@@ -111,6 +111,7 @@ test("懸空相依 → dep.dangling（error, fixable）", () => {
     .find((x) => x.code === "dep.dangling");
   expect(f).toBeDefined();
   expect(f!.fixable).toBe(true);
+  expect(f!.severity).toBe("error");
 });
 
 test("循環相依 → dep.cycle（error）", () => {
@@ -122,6 +123,8 @@ test("循環相依 → dep.cycle（error）", () => {
     .find((x) => x.code === "dep.cycle");
   expect(f).toBeDefined();
   expect(f!.message).toContain("→");
+  expect(f!.severity).toBe("error");
+  expect(f!.fixable).toBe(false);
 });
 
 test("相依於已取消 task → dep.on_cancelled（warn）", () => {

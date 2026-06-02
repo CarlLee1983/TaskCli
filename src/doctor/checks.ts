@@ -126,6 +126,7 @@ function checkDeps(loaded: LoadedTask[]): CheckResult {
   const findings: Finding[] = [];
   const tasks = loaded.filter((l) => l.task).map((l) => l.task!) as Task[];
   const byId = new Map<string, Task>();
+  // 重複 id 由 checkTasks 負責回報；此處只取第一個，避免重複走邊
   for (const t of tasks) if (!byId.has(t.id)) byId.set(t.id, t);
 
   for (const t of tasks) {
@@ -160,22 +161,28 @@ function checkDeps(loaded: LoadedTask[]): CheckResult {
   const stack: string[] = [];
   const reported = new Set<string>();
 
+  // 遞迴 DFS，適用於數百個 task 的規模；若日後 task 數達數千應改為迭代版本
   function dfs(id: string): void {
     color.set(id, GRAY);
     stack.push(id);
     for (const dep of byId.get(id)!.depends_on ?? []) {
       if (!byId.has(dep)) continue;
       if (color.get(dep) === GRAY) {
-        const start = stack.indexOf(dep);
-        const cyc = stack.slice(start).concat(dep);
-        const key = [...new Set(cyc)].sort().join(",");
+        // 取出環路節點（stack 從 dep 到目前），dep 為環的接點
+        const path = stack.slice(stack.indexOf(dep));
+        // 正規化：以字典序最小節點為起點旋轉，使同一環無論從哪個節點進入都得到相同 key，
+        // 避免將同一環重複回報、也不會誤併不同的環
+        const minNode = [...path].sort()[0]!;
+        const minIdx = path.indexOf(minNode);
+        const ordered = [...path.slice(minIdx), ...path.slice(0, minIdx)];
+        const key = ordered.join(",");
         if (!reported.has(key)) {
           reported.add(key);
           findings.push({
             code: "dep.cycle",
             severity: "error",
-            target: cyc[0]!,
-            message: `循環相依：${cyc.join(" → ")}`,
+            target: ordered[0]!,
+            message: `循環相依：${[...ordered, ordered[0]].join(" → ")}`,
             fixable: false,
           });
         }
