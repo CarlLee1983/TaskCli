@@ -95,5 +95,10 @@ test("重複 id → task.duplicate_id（error）", () => {
   writeTaskFile(root, "T-300", validTask("T-300"));
   writeTaskFile(root, "T-301", validTask("T-300"));
   const report = runChecks(root);
-  expect(codes(report)).toContain("task.duplicate_id");
+  const f = report.checks.find((c) => c.name === "tasks")!.findings
+    .find((x) => x.code === "task.duplicate_id");
+  expect(f).toBeDefined();
+  expect(f!.target).toBe("T-300");
+  expect(f!.fixable).toBe(false);
+  expect(report.ok).toBe(false);
 });

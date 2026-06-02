@@ -107,9 +107,7 @@ function checkTasks(loaded: LoadedTask[]): CheckResult {
         fixable: true,
       });
     }
-    const list = idToFiles.get(task.id) ?? [];
-    list.push(lt.fileId);
-    idToFiles.set(task.id, list);
+    idToFiles.set(task.id, [...(idToFiles.get(task.id) ?? []), lt.fileId]);
   }
   for (const [id, files] of idToFiles) {
     if (files.length > 1) {
