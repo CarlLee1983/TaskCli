@@ -58,3 +58,15 @@ test("config.defaultType 非法 → layout.config_invalid_enum（warn）", () =>
   const report = runChecks(root);
   expect(codes(report)).toContain("layout.config_invalid_enum");
 });
+
+test("config.defaultPriority 非法 → layout.config_invalid_enum（warn）", () => {
+  const root = makeRepo();
+  writeFileSync(
+    join(root, ".taskcli/config.json"),
+    JSON.stringify({ defaultPriority: "urgent" }),
+    "utf8",
+  );
+  const report = runChecks(root);
+  expect(codes(report)).toContain("layout.config_invalid_enum");
+  expect(report.warnCount).toBe(1);
+});

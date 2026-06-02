@@ -4,8 +4,7 @@ import { tasksDir, draftsDir, transcriptsDir, configPath } from "../storage/path
 import { parseTask } from "../model/frontmatter";
 import { TASK_TYPES, PRIORITIES } from "../model/types";
 import type { Task } from "../model/types";
-import type { CheckResult, DoctorReport } from "./types";
-import type { Finding } from "./types";
+import type { CheckResult, DoctorReport, Finding } from "./types";
 
 interface LoadedTask {
   fileId: string;
