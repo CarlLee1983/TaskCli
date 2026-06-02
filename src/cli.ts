@@ -10,6 +10,7 @@ import { startReviewServer } from "./review/server";
 import { runSkillInstall } from "./commands/skill";
 import { runInstallBin } from "./commands/installBin";
 import { runImport } from "./commands/import";
+import { runDoctor } from "./commands/doctor";
 import { runHistoryAdd, runHistoryList } from "./commands/history";
 import {
   runTranscriptAdd,
@@ -47,6 +48,7 @@ const USAGE = `usage: taskcli <command> [options]
   transcript show <id> [--json]       顯示 transcript
   transcript rm <id>                  刪除 transcript
   import github [<n>] [--repo --state --label --limit --dry-run]   從 GitHub Issues 匯入
+  doctor [--fix] [--json]             檢查 .taskcli 工作區健康度
   install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
   skill install [--dest <dir>]        把 SKILL.md 安裝到 ~/.claude/skills/taskcli/
 
@@ -401,6 +403,20 @@ async function main(): Promise<void> {
           return;
         }
         fail(`未知 import 子指令：${sub ?? ""}\n${USAGE}`);
+        return;
+      }
+      case "doctor": {
+        const { values } = parseArgs({
+          args: rest,
+          options: { fix: { type: "boolean" }, json: { type: "boolean" } },
+          allowPositionals: true,
+        });
+        const { output, exitCode } = runDoctor(requireRoot(cwd), {
+          fix: values.fix,
+          json: values.json,
+        });
+        process.stdout.write(`${output}\n`);
+        if (exitCode !== 0) process.exit(exitCode);
         return;
       }
       case "install-bin": {

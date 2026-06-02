@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, existsSync } from "node:fs";
+import { mkdtempSync, existsSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -287,4 +287,35 @@ test("--help 含 transcript commands", async () => {
   expect(res.code).toBe(0);
   expect(res.stdout).toContain("transcript import");
   expect(res.stdout).toContain("transcript show");
+});
+
+test("doctor：乾淨 repo 回 exit 0 與正常訊息", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-doctor-"));
+  await run(root, ["init"]);
+  const r = await run(root, ["doctor"]);
+  expect(r.code).toBe(0);
+  expect(r.stdout).toContain("一切正常");
+});
+
+test("doctor：懸空相依回 exit 1，--fix 後回 0", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-doctor-"));
+  await run(root, ["init"]);
+  writeFileSync(
+    join(root, ".taskcli/tasks/T-001.md"),
+    `---\nid: "T-001"\ntitle: "t"\ntype: "feature"\nstatus: "todo"\npriority: "med"\ntags: []\ndepends_on: ["T-099"]\ncreated: "2026-06-02T10:00:00+08:00"\nupdated: "2026-06-02T10:00:00+08:00"\n---\n`,
+    "utf8",
+  );
+  const bad = await run(root, ["doctor"]);
+  expect(bad.code).toBe(1);
+  const fixed = await run(root, ["doctor", "--fix"]);
+  expect(fixed.code).toBe(0);
+});
+
+test("doctor --json：輸出可解析的 DoctorReport", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cli-doctor-"));
+  await run(root, ["init"]);
+  const r = await run(root, ["doctor", "--json"]);
+  const parsed = JSON.parse(r.stdout);
+  expect(parsed.ok).toBe(true);
+  expect(Array.isArray(parsed.checks)).toBe(true);
 });
