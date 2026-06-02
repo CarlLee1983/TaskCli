@@ -46,15 +46,19 @@ export function applyFixes(root: string, report: DoctorReport): FixOutcome[] {
 
   // ── 2. task.id_mismatch ──────────────────────────────────────────────────
   // finding.target = fileId (the filename without extension)
+  // 合法擁有者：fileId 與宣告 id 一致的 entry
+  const isLegitimateOwner = (l: { fileId: string; task: Task }) => l.fileId === l.task.id;
   for (const f of fixable.filter((x) => x.code === "task.id_mismatch")) {
     const entry = parsed.find((l) => l.fileId === f.target);
     if (!entry) continue;
 
-    // Safety: skip if the task's current declared id is correctly owned by another file
-    // (i.e., another file has fileId === task.id, meaning it's the legitimate owner).
+    // Safety: skip if the task's current declared id is correctly owned by another file.
     // In that case, we have a duplicate-id situation and the right fix is ambiguous.
     const collision = parsed.some(
-      (l) => l.fileId !== f.target && l.task.id === entry.task.id && l.fileId === l.task.id,
+      (l) =>
+        l.fileId !== f.target &&        // 不是待修正的那個 entry
+        l.task.id === entry.task.id &&  // 宣告了相同的 task id
+        isLegitimateOwner(l),           // 且它是合法擁有者
     );
     if (collision) {
       outcomes.push({
@@ -87,6 +91,7 @@ export function applyFixes(root: string, report: DoctorReport): FixOutcome[] {
   // Multiple findings may exist for the same task (one per missing dep);
   // the first pass removes all dangling deps; subsequent passes skip (removed.length === 0).
   for (const f of fixable.filter((x) => x.code === "dep.dangling")) {
+    // Phase 2 後 task.id 多已對齊 fileId；雙重比對為防禦性，涵蓋 collision-skip 的 entry
     const entry = parsed.find(
       (l) => l.task.id === f.target || l.fileId === f.target,
     );

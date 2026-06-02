@@ -38,6 +38,17 @@ test("dangling dep：移除懸空相依，保留有效相依", () => {
   expect(after).not.toContain("T-099");
 });
 
+test("dep.dangling：同一 task 兩筆 dangling，只產生一筆 applied outcome", () => {
+  const root = makeRepo();
+  writeTaskFile(root, "T-001", validTask("T-001", `depends_on: ["T-099","T-100"]\n`));
+  const outcomes = applyFixes(root, runChecks(root));
+  const applied = outcomes.filter((o) => o.code === "dep.dangling" && o.applied);
+  expect(applied.length).toBe(1);
+  const after = readFileSync(join(root, ".taskcli/tasks/T-001.md"), "utf8");
+  expect(after).not.toContain("T-099");
+  expect(after).not.toContain("T-100");
+});
+
 test("id_mismatch：以檔名改寫 id", () => {
   const root = makeRepo();
   writeTaskFile(root, "T-007", validTask("T-008"));
