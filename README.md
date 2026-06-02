@@ -24,6 +24,7 @@ bun run build        # 產出單一執行檔 dist/taskcli
 - task history：append-only JSONL sidecar、`history add/list/view` 與只讀 HTML timeline。
 - transcript inbox：`transcript import/add/list/show/rm`，以 provider command 轉錄音檔或匯入文字稿。
 - GitHub Issues 單向匯入與 `source` upsert。
+- `doctor`：檢查 `.taskcli/` 工作區健康度（task 完整性、相依關係、目錄與設定、sidecar 一致性），`--fix` 安全修復、`--json` 供 agent 取用，發現 error 時 exit code 為 1。
 - `install-bin` 與 `skill install`，方便安裝 binary 與 agent skill。
 
 完整版本紀錄見 [`CHANGELOG.md`](CHANGELOG.md)；各版交付說明見 [`docs/releases/`](docs/releases/)。
@@ -39,6 +40,8 @@ taskcli finalize D-001                # 生成正式 task
 taskcli list                          # 追蹤
 taskcli update T-001 --status in_progress
 taskcli done T-001
+taskcli doctor                        # 診斷 .taskcli 工作區
+taskcli doctor --fix                  # 安全自動修復
 ```
 
 ## task 結構（`.taskcli/tasks/T-001.md`）

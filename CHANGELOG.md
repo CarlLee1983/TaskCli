@@ -2,6 +2,16 @@
 
 所有重要變更會記錄在此檔。
 
+## [Unreleased]
+
+### Added
+
+- 新增 `taskcli doctor [--fix] [--json]`：診斷 `.taskcli/` 工作區（task 完整性、相依關係含循環偵測、目錄與設定、sidecar 一致性）。`--fix` 只做無損安全修復（補目錄、移除懸空 `depends_on`、修正檔名與 id 不符），`--json` 輸出結構化 `DoctorReport`；發現 error 時 exit code 為 1。
+
+### Docs
+
+- 新增 `docs/superpowers/specs/2026-06-02-taskcli-doctor-design.md` 設計與 `docs/superpowers/plans/2026-06-02-taskcli-doctor.md` 實作計畫。
+
 ## v0.4.0 - Transcript inbox
 
 ### Added
