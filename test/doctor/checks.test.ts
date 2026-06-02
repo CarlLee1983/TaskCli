@@ -70,3 +70,30 @@ test("config.defaultPriority 非法 → layout.config_invalid_enum（warn）", (
   expect(codes(report)).toContain("layout.config_invalid_enum");
   expect(report.warnCount).toBe(1);
 });
+
+test("壞 frontmatter → task.parse_failed（error）", () => {
+  const root = makeRepo();
+  writeTaskFile(root, "T-001", "沒有 frontmatter 的內容");
+  const report = runChecks(root);
+  expect(codes(report)).toContain("task.parse_failed");
+  expect(report.ok).toBe(false);
+});
+
+test("檔名與 id 不符 → task.id_mismatch（error, fixable）", () => {
+  const root = makeRepo();
+  writeTaskFile(root, "T-007", validTask("T-008"));
+  const report = runChecks(root);
+  const f = report.checks.find((c) => c.name === "tasks")!.findings
+    .find((x) => x.code === "task.id_mismatch");
+  expect(f).toBeDefined();
+  expect(f!.target).toBe("T-007");
+  expect(f!.fixable).toBe(true);
+});
+
+test("重複 id → task.duplicate_id（error）", () => {
+  const root = makeRepo();
+  writeTaskFile(root, "T-300", validTask("T-300"));
+  writeTaskFile(root, "T-301", validTask("T-300"));
+  const report = runChecks(root);
+  expect(codes(report)).toContain("task.duplicate_id");
+});

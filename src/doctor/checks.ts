@@ -83,8 +83,46 @@ function checkLayout(root: string): CheckResult {
   }
   return { name: "layout", findings };
 }
-function checkTasks(_loaded: LoadedTask[]): CheckResult {
-  return { name: "tasks", findings: [] };
+function checkTasks(loaded: LoadedTask[]): CheckResult {
+  const findings: Finding[] = [];
+  const idToFiles = new Map<string, string[]>();
+  for (const lt of loaded) {
+    if (lt.parseError) {
+      findings.push({
+        code: "task.parse_failed",
+        severity: "error",
+        target: lt.fileId,
+        message: `frontmatter 解析失敗：${lt.parseError}`,
+        fixable: false,
+      });
+      continue;
+    }
+    const task = lt.task!;
+    if (task.id !== lt.fileId) {
+      findings.push({
+        code: "task.id_mismatch",
+        severity: "error",
+        target: lt.fileId,
+        message: `檔名與 id 不符（id=${task.id}）`,
+        fixable: true,
+      });
+    }
+    const list = idToFiles.get(task.id) ?? [];
+    list.push(lt.fileId);
+    idToFiles.set(task.id, list);
+  }
+  for (const [id, files] of idToFiles) {
+    if (files.length > 1) {
+      findings.push({
+        code: "task.duplicate_id",
+        severity: "error",
+        target: id,
+        message: `id ${id} 重複於：${files.join("、")}`,
+        fixable: false,
+      });
+    }
+  }
+  return { name: "tasks", findings };
 }
 function checkDeps(_loaded: LoadedTask[]): CheckResult {
   return { name: "deps", findings: [] };
