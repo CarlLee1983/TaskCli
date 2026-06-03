@@ -25,6 +25,7 @@ bun run build        # 產出單一執行檔 dist/taskcli
 - transcript inbox：`transcript import/add/list/show/rm`，以 provider command 轉錄音檔或匯入文字稿。
 - GitHub Issues 單向匯入與 `source` upsert。
 - `doctor`：檢查 `.taskcli/` 工作區健康度（task 完整性、相依關係、目錄與設定、sidecar 一致性），`--fix` 安全修復、`--json` 供 agent 取用，發現 error 時 exit code 為 1。
+- `slack`：以 Slack Socket Mode 啟動前景常駐 bot，從 Slack 用 `/task` slash command 對單一固定 repo 的 `.taskcli/` 做 list/next/show/add/wip/done（個人本機、user allowlist 授權；token 走 env var）。
 - `install-bin` 與 `skill install`，方便安裝 binary 與 agent skill。
 
 完整版本紀錄見 [`CHANGELOG.md`](CHANGELOG.md)；各版交付說明見 [`docs/releases/`](docs/releases/)。
@@ -43,6 +44,21 @@ taskcli done T-001
 taskcli doctor                        # 診斷 .taskcli 工作區
 taskcli doctor --fix                  # 安全自動修復
 ```
+
+## Slack 整合（個人本機 bot）
+
+```bash
+# 設定檔：~/.config/taskcli/slack.json（repoPath 為含 .taskcli 的 repo 根目錄）
+# { "repoPath": "/Users/you/Dev/your-repo", "allowedUserIds": ["U0XXXXXXX"] }
+
+export SLACK_BOT_TOKEN=xoxb-...   # scopes: commands, chat:write, users:read
+export SLACK_APP_TOKEN=xapp-...   # scope: connections:write（Socket Mode）
+
+taskcli slack                     # 前景啟動，Ctrl+C 結束
+```
+
+Slack 內可用：`/task list [status]`、`/task next`、`/task show T-001`、
+`/task add 標題 [#type] [!priority]`、`/task wip T-001`、`/task done T-001`、`/task help`。
 
 ## task 結構（`.taskcli/tasks/T-001.md`）
 

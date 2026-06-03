@@ -7,10 +7,12 @@
 ### Added
 
 - 新增 `taskcli doctor [--fix] [--json]`：診斷 `.taskcli/` 工作區（task 完整性、相依關係含循環偵測、目錄與設定、sidecar 一致性）。`--fix` 只做無損安全修復（補目錄、移除懸空 `depends_on`、修正檔名與 id 不符），`--json` 輸出結構化 `DoctorReport`；發現 error 時 exit code 為 1。
+- 新增 `taskcli slack`：以 Slack Socket Mode 啟動個人本機常駐 bot，從 Slack 用 `/task` slash command 操作單一固定 repo 的 `.taskcli/`（list/next/show/add/wip/done），以 user allowlist 授權、token 走 env var（`SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN`）。
 
 ### Docs
 
 - 新增 `docs/superpowers/specs/2026-06-02-taskcli-doctor-design.md` 設計與 `docs/superpowers/plans/2026-06-02-taskcli-doctor.md` 實作計畫。
+- 新增 `docs/superpowers/specs/2026-06-03-taskcli-slack-integration-design.md` 設計與 `docs/superpowers/plans/2026-06-03-taskcli-slack-integration.md` 實作計畫。
 
 ## v0.4.0 - Transcript inbox
 
