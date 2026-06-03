@@ -18,6 +18,8 @@ export function runAction(root: string, cmd: ParsedCommand, deps: ActionDeps = {
     case "error":
       return cmd.message;
     case "list": {
+      // list 的 status 需先驗證：非法值若直接傳給 runList 會「無相符」而靜默回空清單，
+      // 對使用者誤導。add 的 type/priority 則由 runAdd 的 parseEnum throw 出明確訊息，無此問題。
       if (cmd.status !== undefined && !(TASK_STATUSES as readonly string[]).includes(cmd.status)) {
         return `不合法的狀態篩選：${cmd.status}（允許值：${TASK_STATUSES.join(" | ")}）`;
       }
