@@ -11,6 +11,7 @@ import { runSkillInstall } from "./commands/skill";
 import { runInstallBin } from "./commands/installBin";
 import { runImport } from "./commands/import";
 import { runDoctor } from "./commands/doctor";
+import { runSlack } from "./commands/slack";
 import { runHistoryAdd, runHistoryList } from "./commands/history";
 import {
   runTranscriptAdd,
@@ -49,6 +50,7 @@ const USAGE = `usage: taskcli <command> [options]
   transcript rm <id>                  刪除 transcript
   import github [<n>] [--repo --state --label --limit --dry-run]   從 GitHub Issues 匯入
   doctor [--fix] [--json]             檢查 .taskcli 工作區健康度
+  slack [--config <path>]             啟動 Slack Socket Mode bot（前景常駐）
   install-bin [--dest <dir>]          把 taskcli 複製到 ~/.local/bin
   skill install [--dest <dir>]        把 SKILL.md 安裝到 ~/.claude/skills/taskcli/
 
@@ -419,6 +421,15 @@ async function main(): Promise<void> {
         // doctor 已將完整報告寫到 stdout；以原始 exitCode 直接退出傳遞診斷結果，
         // 不走 fail()（避免在已輸出報告後又往 stderr 多印一段訊息）
         if (exitCode !== 0) process.exit(exitCode);
+        return;
+      }
+      case "slack": {
+        const { values } = parseArgs({
+          args: rest,
+          options: { config: { type: "string" } },
+          allowPositionals: true,
+        });
+        await runSlack({ configPath: values.config });
         return;
       }
       case "install-bin": {
