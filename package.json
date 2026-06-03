@@ -3,7 +3,9 @@
   "version": "0.4.0",
   "private": true,
   "type": "module",
-  "bin": { "taskcli": "src/cli.ts" },
+  "bin": {
+    "taskcli": "src/cli.ts"
+  },
   "scripts": {
     "dev": "bun run src/cli.ts",
     "test": "bun test",
@@ -11,5 +13,8 @@
   },
   "devDependencies": {
     "bun-types": "^1.3.11"
+  },
+  "dependencies": {
+    "@slack/bolt": "^4.7.3"
   }
 }
