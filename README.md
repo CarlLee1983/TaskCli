@@ -1,6 +1,6 @@
 # TaskCli
 
-**目前版本：v0.4.0**
+**目前版本：v0.5.0**
 
 在任何 repo 的 `.taskcli/` 資料夾中，以「draft → 本地 HTML 審閱 → 正式 task」流程建立並追蹤 task 的 CLI 工具。CLI 純存取、不碰 LLM；自然語言整理交給 AI agent。
 
@@ -201,3 +201,7 @@ taskcli skill install --dest .claude/skills   # 或裝到某專案
 裝好後，在該專案對 Claude 說「幫我把這些要做的事整理成 task」即可觸發。
 
 設計與計畫見 `docs/superpowers/`。
+
+## License
+
+MIT，見 [`LICENSE`](LICENSE)。
