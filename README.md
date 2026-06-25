@@ -200,17 +200,16 @@ taskcli import github 42
 
 ## 給 AI agent 使用（skill）
 
-taskcli 內附一個 Claude Code skill，讓 agent 把你的口語/文字整理成 task、引導你在審閱頁確認後建立並追蹤。
-
-安裝（兩者都用編譯後的 binary 執行）：
+taskcli 內附一個 Claude Code skill，讓 agent 把你的口語/文字整理成 task、引導你在審閱頁確認後建立並追蹤。skill 內容已嵌進 CLI，npm 全域安裝後即可直接安裝：
 
 ```bash
-taskcli install-bin                 # 把 taskcli 複製到 ~/.local/bin（確認在 PATH）
 taskcli skill install               # 把 skill 複製到 ~/.claude/skills/taskcli/
 taskcli skill install --dest .claude/skills   # 或裝到某專案
 ```
 
 裝好後，在該專案對 Claude 說「幫我把這些要做的事整理成 task」即可觸發。
+
+> 不想裝 Node、想用單一原生執行檔的離線情境，可改用 `bun run compile` 產出的 `dist/taskcli`，並以 `taskcli install-bin` 複製到 `~/.local/bin`（須在 PATH）。一般使用者用上面的 `npm i -g` 即可，不需要 `install-bin`。
 
 設計與計畫見 `docs/superpowers/`。
 
