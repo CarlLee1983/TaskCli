@@ -22,6 +22,7 @@ import {
   runTranscriptShow,
 } from "./commands/transcript";
 import { startHistoryServer } from "./history/server";
+import { readStdin, readTextFile, openUrl } from "./util/runtime";
 import type { FetchOpts } from "./integrations/github";
 import type { TaskType, TaskStatus, Priority } from "./model/types";
 
@@ -68,10 +69,6 @@ Examples:
   taskcli transcript show TR-001 --json
 `;
 
-async function readStdin(): Promise<string> {
-  return await new Response(Bun.stdin.stream()).text();
-}
-
 function fail(msg: string): never {
   process.stderr.write(msg.endsWith("\n") ? msg : `${msg}\n`);
   process.exit(1);
@@ -108,7 +105,7 @@ async function main(): Promise<void> {
           const root = requireRoot(cwd);
           let json: string;
           if (values.stdin) json = await readStdin();
-          else if (values["from-json"]) json = await Bun.file(values["from-json"] as string).text();
+          else if (values["from-json"]) json = await readTextFile(values["from-json"] as string);
           else fail("draft create 需要 --stdin 或 --from-json <file>");
           process.stdout.write(`${runDraftCreate(root, { json })}\n`);
           return;
@@ -138,9 +135,9 @@ async function main(): Promise<void> {
         const id = positionals[0];
         if (!id) fail("review 需要 <draft-id>");
         const root = requireRoot(cwd);
-        const srv = startReviewServer(root, id, { port: values.port ? Number(values.port) : undefined });
+        const srv = await startReviewServer(root, id, { port: values.port ? Number(values.port) : undefined });
         process.stdout.write(`審閱頁已啟動：${srv.url}\n送出後會自動關閉（或按 Ctrl+C 結束）。\n`);
-        if (values.open) Bun.spawn(["open", srv.url]);
+        if (values.open) openUrl(srv.url);
         // 等待使用者在審閱頁按「送出」，成功回寫後優雅關閉 server 並退出
         await srv.whenSaved;
         srv.stop();
@@ -169,7 +166,7 @@ async function main(): Promise<void> {
         const title = positionals[0];
         if (!title) fail("add 需要 <title>");
         if (values.body !== undefined && values["body-file"] !== undefined) fail("--body 與 --body-file 不可同時使用");
-        const body = values["body-file"] ? await Bun.file(values["body-file"] as string).text() : values.body;
+        const body = values["body-file"] ? await readTextFile(values["body-file"] as string) : values.body;
         process.stdout.write(`${runAdd(requireRoot(cwd), title, {
           type: values.type, priority: values.priority, tags: values.tag,
           body, due: values.due, assignee: values.assignee, estimate: values.estimate,
@@ -221,7 +218,7 @@ async function main(): Promise<void> {
         const id = positionals[0];
         if (!id) fail("update 需要 <id>");
         if (values.body !== undefined && values["body-file"] !== undefined) fail("--body 與 --body-file 不可同時使用");
-        const body = values["body-file"] ? await Bun.file(values["body-file"] as string).text() : values.body;
+        const body = values["body-file"] ? await readTextFile(values["body-file"] as string) : values.body;
         process.stdout.write(`${runUpdate(requireRoot(cwd), id, {
           title: values.title, type: values.type, status: values.status,
           priority: values.priority, addTag: values["add-tag"], rmTag: values["rm-tag"],
@@ -318,11 +315,11 @@ async function main(): Promise<void> {
           });
           const id = positionals[0];
           if (!id) fail("history view 需要 <task-id>");
-          const srv = startHistoryServer(requireRoot(cwd), id, {
+          const srv = await startHistoryServer(requireRoot(cwd), id, {
             port: values.port ? Number(values.port) : undefined,
           });
           process.stdout.write(`歷程頁已啟動：${srv.url}\n按 Ctrl+C 結束。\n`);
-          if (values.open) Bun.spawn(["open", srv.url]);
+          if (values.open) openUrl(srv.url);
           await new Promise<void>(() => {});
           return;
         }
@@ -452,7 +449,8 @@ async function main(): Promise<void> {
       }
       case "install-bin": {
         const { values } = parseArgs({ args: rest, options: { dest: { type: "string" } }, allowPositionals: true });
-        process.stdout.write(`${runInstallBin({ dest: values.dest }, process.execPath, Bun.main)}\n`);
+        const entryPath = (globalThis as { Bun?: { main?: string } }).Bun?.main ?? process.argv[1] ?? "";
+        process.stdout.write(`${runInstallBin({ dest: values.dest }, process.execPath, entryPath)}\n`);
         return;
       }
       case "skill": {

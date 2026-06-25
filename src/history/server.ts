@@ -1,6 +1,7 @@
 import { readTask } from "../storage/tasks";
 import { listHistoryEvents } from "../storage/history";
 import { renderTaskHistoryPage } from "./page";
+import { startFetchServer } from "../util/http";
 
 export interface HistoryServer {
   url: string;
@@ -12,10 +13,10 @@ export interface HistoryServerOpts {
   port?: number;
 }
 
-export function startHistoryServer(root: string, taskId: string, opts: HistoryServerOpts): HistoryServer {
+export async function startHistoryServer(root: string, taskId: string, opts: HistoryServerOpts): Promise<HistoryServer> {
   readTask(root, taskId);
 
-  const server = Bun.serve({
+  const server = await startFetchServer({
     hostname: "127.0.0.1",
     port: opts.port ?? 0,
     fetch(req) {
@@ -31,10 +32,9 @@ export function startHistoryServer(root: string, taskId: string, opts: HistorySe
     },
   });
 
-  const port = server.port ?? 0;
   return {
-    url: `http://127.0.0.1:${port}/`,
-    port,
-    stop: () => server.stop(),
+    url: server.url,
+    port: server.port,
+    stop: server.stop,
   };
 }

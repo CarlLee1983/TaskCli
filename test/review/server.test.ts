@@ -18,7 +18,7 @@ function setup(): string {
 
 test("GET / 回傳審閱 HTML", async () => {
   const root = setup();
-  const srv = startReviewServer(root, "D-001", { port: 0 });
+  const srv = await startReviewServer(root, "D-001", { port: 0 });
   try {
     const res = await fetch(srv.url);
     const html = await res.text();
@@ -31,7 +31,7 @@ test("GET / 回傳審閱 HTML", async () => {
 
 test("POST /save 回寫 draft", async () => {
   const root = setup();
-  const srv = startReviewServer(root, "D-001", { port: 0 });
+  const srv = await startReviewServer(root, "D-001", { port: 0 });
   try {
     const body = JSON.stringify({
       id: "D-001", source: "x", createdAt: "2026-05-30T10:00:00+08:00",
@@ -51,7 +51,7 @@ test("POST /save 回寫 draft", async () => {
 
 test("POST /save 對壞資料回 400", async () => {
   const root = setup();
-  const srv = startReviewServer(root, "D-001", { port: 0 });
+  const srv = await startReviewServer(root, "D-001", { port: 0 });
   try {
     const res = await fetch(srv.url + "save", {
       method: "POST", headers: { "content-type": "application/json" },
@@ -70,7 +70,7 @@ const validBody = JSON.stringify({
 
 test("成功 POST /save 後 whenSaved resolve（供 CLI 自動關閉）", async () => {
   const root = setup();
-  const srv = startReviewServer(root, "D-001", { port: 0 });
+  const srv = await startReviewServer(root, "D-001", { port: 0 });
   try {
     await fetch(srv.url + "save", {
       method: "POST", headers: { "content-type": "application/json" }, body: validBody,
@@ -87,7 +87,7 @@ test("成功 POST /save 後 whenSaved resolve（供 CLI 自動關閉）", async 
 
 test("壞資料 POST /save 不會觸發 whenSaved（維持等待）", async () => {
   const root = setup();
-  const srv = startReviewServer(root, "D-001", { port: 0 });
+  const srv = await startReviewServer(root, "D-001", { port: 0 });
   try {
     await fetch(srv.url + "save", {
       method: "POST", headers: { "content-type": "application/json" }, body: '{"items":"not-array"}',

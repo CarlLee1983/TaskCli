@@ -39,7 +39,7 @@ function task(id: string, over: Partial<Task> = {}): Task {
 
 test("GET / returns task history HTML", async () => {
   const root = setup();
-  const srv = startHistoryServer(root, "T-001", { port: 0 });
+  const srv = await startHistoryServer(root, "T-001", { port: 0 });
   try {
     const res = await fetch(srv.url);
     const html = await res.text();
@@ -53,7 +53,7 @@ test("GET / returns task history HTML", async () => {
 
 test("unknown history server route returns 404", async () => {
   const root = setup();
-  const srv = startHistoryServer(root, "T-001", { port: 0 });
+  const srv = await startHistoryServer(root, "T-001", { port: 0 });
   try {
     const res = await fetch(srv.url + "save");
     expect(res.status).toBe(404);

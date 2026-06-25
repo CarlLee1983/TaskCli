@@ -1,5 +1,6 @@
 import { readDraft, writeDraft, parseDraft } from "../storage/drafts";
 import { renderDraftPage } from "./page";
+import { startFetchServer } from "../util/http";
 import type { Draft } from "../model/types";
 
 export interface ReviewServer {
@@ -13,7 +14,7 @@ export interface ReviewOpts {
   port?: number;     // 0 = 隨機可用 port
 }
 
-export function startReviewServer(root: string, draftId: string, opts: ReviewOpts): ReviewServer {
+export async function startReviewServer(root: string, draftId: string, opts: ReviewOpts): Promise<ReviewServer> {
   // 啟動前先確認 draft 存在（不存在會丟錯）
   readDraft(root, draftId);
 
@@ -21,7 +22,7 @@ export function startReviewServer(root: string, draftId: string, opts: ReviewOpt
   let resolveSaved!: () => void;
   const whenSaved = new Promise<void>((resolve) => { resolveSaved = resolve; });
 
-  const server = Bun.serve({
+  const server = await startFetchServer({
     hostname: "127.0.0.1",
     port: opts.port ?? 0,
     async fetch(req) {
@@ -50,12 +51,11 @@ export function startReviewServer(root: string, draftId: string, opts: ReviewOpt
     },
   });
 
-  const port = server.port ?? 0;
   return {
-    url: `http://127.0.0.1:${port}/`,
-    port,
-    // 優雅關閉：等進行中的請求（含剛送出的 /save 回應）完成再停，避免截斷回應
-    stop: () => server.stop(),
+    url: server.url,
+    port: server.port,
+    // 優雅關閉：停止接受新連線並關閉 server（剛送出的 /save 回應已寫回）
+    stop: server.stop,
     whenSaved,
   };
 }

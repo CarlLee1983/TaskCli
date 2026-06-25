@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { basename, extname } from "node:path";
 import { loadConfig } from "../storage/config";
 import { nextId } from "../storage/ids";
@@ -112,15 +113,16 @@ function renderProviderCommand(command: string, values: { input: string; languag
     .replaceAll("{language}", shellQuote(values.language));
 }
 
-async function runProviderCommand(command: string): Promise<{ stdout: string; stderr: string; code: number }> {
-  const proc = Bun.spawn(["sh", "-c", command], {
-    stdout: "pipe",
-    stderr: "pipe",
+function runProviderCommand(command: string): Promise<{ stdout: string; stderr: string; code: number }> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn("sh", ["-c", command]);
+    let stdout = "";
+    let stderr = "";
+    proc.stdout.on("data", (d) => { stdout += d.toString(); });
+    proc.stderr.on("data", (d) => { stderr += d.toString(); });
+    proc.on("error", reject);
+    proc.on("close", (code) => resolve({ stdout, stderr, code: code ?? 0 }));
   });
-  const stdout = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
-  const code = await proc.exited;
-  return { stdout, stderr, code };
 }
 
 export async function runTranscriptImport(root: string, audioFile: string, opts: TranscriptImportOpts): Promise<string> {

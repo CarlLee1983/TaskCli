@@ -1,3 +1,5 @@
+import { spawnSync } from "node:child_process";
+
 export interface GithubIssue {
   number: number;
   title: string;
@@ -55,17 +57,15 @@ export function parseIssuesJson(raw: string, repo: string): GithubIssue[] {
 }
 
 function runGh(args: string[]): string {
-  let proc;
-  try {
-    proc = Bun.spawnSync(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
-  } catch {
+  const proc = spawnSync("gh", args, { encoding: "utf8" });
+  if (proc.error) {
     throw new Error("找不到 gh CLI，請先安裝 GitHub CLI 並執行 `gh auth login`");
   }
-  if (proc.exitCode !== 0) {
-    const err = proc.stderr.toString().trim();
-    throw new Error(`gh 執行失敗：${err || `exit ${proc.exitCode}`}（請確認已 gh auth login 且 repo 正確）`);
+  if (proc.status !== 0) {
+    const err = (proc.stderr ?? "").trim();
+    throw new Error(`gh 執行失敗：${err || `exit ${proc.status}`}（請確認已 gh auth login 且 repo 正確）`);
   }
-  return proc.stdout.toString();
+  return proc.stdout ?? "";
 }
 
 /** repo 未指定時用 gh 從 cwd 推導 owner/repo。 */
