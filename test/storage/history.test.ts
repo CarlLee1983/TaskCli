@@ -102,3 +102,27 @@ test("appendHistoryEvent rejects events for a different task path", () => {
   }, "T-001")).toThrow(/task_id/);
   expect(existsSync(historyPath(root, "T-001"))).toBe(false);
 });
+
+import { existsSync as existsSyncFs } from "node:fs";
+import { join as joinPath } from "node:path";
+import { deleteHistory, historyPath as historyPathFn } from "../../src/storage/history";
+
+function tmpHistRoot(): string {
+  return mkdtempSync(joinPath(tmpdir(), "taskcli-histdel-"));
+}
+
+test("deleteHistory 刪除既有 sidecar", () => {
+  const root = tmpHistRoot();
+  appendHistoryEvent(root, {
+    id: "E-001", task_id: "T-001", type: "note",
+    created: "2026-01-01T00:00:00+08:00", body: "x",
+  });
+  expect(existsSyncFs(historyPathFn(root, "T-001"))).toBe(true);
+  deleteHistory(root, "T-001");
+  expect(existsSyncFs(historyPathFn(root, "T-001"))).toBe(false);
+});
+
+test("deleteHistory 對不存在 sidecar 不報錯", () => {
+  const root = tmpHistRoot();
+  expect(() => deleteHistory(root, "T-404")).not.toThrow();
+});
