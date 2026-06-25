@@ -23,5 +23,6 @@ test("SKILL.md 內文含關鍵指令字串", () => {
 
 test("SKILL.md 說明 review 由使用者執行（避免 agent 前景阻塞）", () => {
   const body = md();
-  expect(body).toMatch(/review[\s\S]*使用者|使用者[\s\S]*review/);
+  expect(body).toMatch(/Do not run it in the foreground/i);
+  expect(body).toMatch(/ask the user to run it/i);
 });
