@@ -22,6 +22,7 @@ import {
   runTranscriptShow,
 } from "./commands/transcript";
 import { startHistoryServer } from "./history/server";
+import { startBoardServer } from "./board/server";
 import { readStdin, readTextFile, openUrl } from "./util/runtime";
 import type { FetchOpts } from "./integrations/github";
 import type { TaskType, TaskStatus, Priority } from "./model/types";
@@ -41,6 +42,7 @@ const USAGE = `usage: taskcli <command> [options]
               --body --body-file --due YYYY-MM-DD --assignee --estimate --add-dep T-NNN --rm-dep T-NNN]
   done <id>                           標記完成
   next [--limit n --json]             顯示下一個可執行 task
+  board [--port <n>] [--open]         啟動唯讀任務看板（依狀態分欄）
   rm <id>                             刪除 task
   merge <source> --into <target> [--json]      合併重複 task（重接相依後刪除來源）
   history add <task-id> --type <type> [--title --body --body-file --author]   追加 task 歷程
@@ -245,6 +247,19 @@ async function main(): Promise<void> {
           limit: values.limit ? Number(values.limit) : undefined,
           json: values.json,
         })}\n`);
+        return;
+      }
+      case "board": {
+        const { values } = parseArgs({
+          args: rest, options: { port: { type: "string" }, open: { type: "boolean" } },
+          allowPositionals: true,
+        });
+        const srv = await startBoardServer(requireRoot(cwd), {
+          port: values.port ? Number(values.port) : undefined,
+        });
+        process.stdout.write(`任務看板已啟動：${srv.url}\n重新整理即更新，按 Ctrl+C 結束。\n`);
+        if (values.open) openUrl(srv.url);
+        await new Promise<void>(() => {});
         return;
       }
       case "rm": {

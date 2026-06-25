@@ -76,6 +76,7 @@ This generates one formal task for each item marked "include" on the review page
 | User intent | Command |
 |-------------|---------|
 | List todo / all | `taskcli list --json` (optionally `--status todo` `--type fix` `--priority high` `--tag auth`) |
+| Open a read-only HTML board | Ask the user to run `! taskcli board --open` (a foreground server grouping tasks by status; do not run it yourself or you will block). Refreshing the page reflects the latest tasks. |
 | Show a single task | `taskcli show T-001 --json` |
 | Start working | `taskcli update T-001 --status in_progress` |
 | Complete | `taskcli done T-001` |

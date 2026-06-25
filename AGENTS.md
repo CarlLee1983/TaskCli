@@ -39,6 +39,7 @@ src/
   model/            純資料：types、frontmatter 解析、clock（時間注入）、transcript
   review/           draft 審閱用本地 HTTP server + HTML page
   history/          只讀 history timeline server + page
+  board/            只讀任務看板（依狀態分欄）server + page
   integrations/     github（透過 gh CLI）、issueMapping
   slack/            Socket Mode bot：bot/router/actions/format/auth/config
   doctor/           工作區健康檢查：checks/fixes/report/types
@@ -56,7 +57,7 @@ docs/               releases/ 與 superpowers/ 設計筆記
 - **指令函式回傳字串、不直接 `console.log`**：由 `cli.ts` 統一 `process.stdout.write`。錯誤用 `throw new Error(msg)`，`cli.ts` 的 try/catch 會轉成 stderr + exit 1。
 - **讀取型指令一律支援 `--json`**：給 agent 解析用；新讀取指令請比照。
 - **時間經 `model/clock.ts` 注入**，不要在邏輯內直接 `new Date()`，以利測試與可重現。
-- **阻塞型指令**（`review`、`history view`、`slack`）會常駐前景等待。寫測試或自動化時不要在前景同步呼叫它們而卡死。
+- **阻塞型指令**（`review`、`history view`、`board`、`slack`）會常駐前景等待。寫測試或自動化時不要在前景同步呼叫它們而卡死。
 - **secrets 走 env var**：Slack 用 `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN`，絕不寫死或 log。
 - **GitHub 匯入依賴外部 `gh` CLI**（需先 `gh auth login`），為單向 upsert（以 issue 狀態覆寫本地 status）。
 

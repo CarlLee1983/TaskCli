@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## v0.6.0 - 2026-06-25 - 任務看板（board）
+
+### Added
+
+- 新增 `taskcli board [--port <n>] [--open]`：啟動唯讀任務看板的本地 HTTP server，依狀態分為「待辦 / 進行中 / 已完成 / 已取消」四欄，卡片顯示 id、類型、優先級、標籤、負責人、截止、估時與相依；欄位內依優先級高→低、其次 id 排序。頁面內建前端搜尋（id / 標題 / 標籤 / 負責人）與類型 / 優先級篩選，且每次請求重讀 `.taskcli/`，瀏覽器重新整理即反映最新狀態。補足先前「HTML 審閱只存在於 draft 階段、finalize 後僅能用純文字 `list` 檢視」的缺口。
+- 新增 `src/board/page.ts`（render，全程 HTML escape）與 `src/board/server.ts`（沿用 `util/http` 的 fetch server），對應測試 `test/board/page.test.ts`、`test/board/server.test.ts`。
+
 ## v0.5.1 - 2026-06-25 - npm 發佈與 Node 相容化
 
 ### Added
