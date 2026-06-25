@@ -5,6 +5,7 @@ import { listHistoryEvents, listHistoryTaskIds } from "../storage/history";
 import { listTranscriptIds, transcriptPath } from "../storage/transcripts";
 import { parseTranscript } from "../model/transcript";
 import { parseTask } from "../model/frontmatter";
+import { findCycles } from "../model/deps";
 import { TASK_TYPES, PRIORITIES } from "../model/types";
 import type { Task } from "../model/types";
 import type { CheckResult, DoctorReport, Finding } from "./types";
@@ -155,50 +156,18 @@ function checkDeps(loaded: LoadedTask[]): CheckResult {
     }
   }
 
-  // 循環偵測：DFS 白/灰/黑著色，只走存在 task 間的邊
-  const WHITE = 0;
-  const GRAY = 1;
-  const BLACK = 2;
-  const color = new Map<string, number>();
-  for (const id of byId.keys()) color.set(id, WHITE);
-  const stack: string[] = [];
-  const reported = new Set<string>();
-
-  // 遞迴 DFS，適用於數百個 task 的規模；若日後 task 數達數千應改為迭代版本
-  function dfs(id: string): void {
-    color.set(id, GRAY);
-    stack.push(id);
-    for (const dep of byId.get(id)!.depends_on ?? []) {
-      if (!byId.has(dep)) continue;
-      if (color.get(dep) === GRAY) {
-        // 取出環路節點（stack 從 dep 到目前），dep 為環的接點
-        const path = stack.slice(stack.indexOf(dep));
-        // 正規化：以字典序最小節點為起點旋轉，使同一環無論從哪個節點進入都得到相同 key，
-        // 避免將同一環重複回報、也不會誤併不同的環
-        const minNode = [...path].sort()[0]!;
-        const minIdx = path.indexOf(minNode);
-        const ordered = [...path.slice(minIdx), ...path.slice(0, minIdx)];
-        const key = ordered.join(",");
-        if (!reported.has(key)) {
-          reported.add(key);
-          findings.push({
-            code: "dep.cycle",
-            severity: "error",
-            target: ordered[0]!,
-            message: `循環相依：${[...ordered, ordered[0]].join(" → ")}`,
-            fixable: false,
-          });
-        }
-      } else if (color.get(dep) === WHITE) {
-        dfs(dep);
-      }
-    }
-    stack.pop();
-    color.set(id, BLACK);
-  }
-
-  for (const id of [...byId.keys()].sort()) {
-    if (color.get(id) === WHITE) dfs(id);
+  // 循環偵測：委派 model/deps 的共用實作（只走存在 task 間的邊），
+  // doctor 在回傳的相異環上附加 finding 格式與訊息
+  const graph = new Map<string, string[]>();
+  for (const [id, t] of byId) graph.set(id, t.depends_on ?? []);
+  for (const ordered of findCycles(graph)) {
+    findings.push({
+      code: "dep.cycle",
+      severity: "error",
+      target: ordered[0]!,
+      message: `循環相依：${[...ordered, ordered[0]].join(" → ")}`,
+      fixable: false,
+    });
   }
 
   return { name: "deps", findings };
