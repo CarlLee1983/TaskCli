@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## v0.5.1 - 2026-06-25 - npm 發佈與 Node 相容化
+
 ### Added
 
 - 新增 `taskcli merge <source> --into <target> [--json]`：合併重複 task——將指向來源的相依重接到目標、聯集來源的 `tags`/`depends_on`、於目標 history 記一筆 note，再刪除來源與其 sidecar；會拒絕造成循環相依的合併。
@@ -11,8 +13,13 @@
 
 ### Changed
 
-- **準備 npm 發佈**：套件改名為 scoped `@carllee1983/taskcli` 並移除 `private`；`bin` 改指向 `bun build --target node` 產出的 Node bundle `dist/cli.js`（`src/cli.ts` shebang 改為 `#!/usr/bin/env node`），一般使用者可用 Node（>= 20）`npm i -g` 安裝。
+- **發佈到 npm**：套件改名為 scoped `@carllee1983/taskcli` 並移除 `private`；`bin` 改指向 `bun build --target node` 產出的 Node bundle `dist/cli.js`（`src/cli.ts` shebang 改為 `#!/usr/bin/env node`），一般使用者可用 Node（>= 20）`npm i -g @carllee1983/taskcli` 安裝。
 - `package.json` 補 `description`/`repository`/`homepage`/`bugs`/`keywords`/`author`/`engines`/`publishConfig`，`files` 白名單收斂至 `dist/cli.js` 與文件（tarball 由 163 檔降至 5 檔）；新增 `build`（node bundle）、`compile`（原生 binary）、`prepublishOnly` scripts。
+- **Node 相容化**：新增 `src/util/http.ts`（`node:http` 取代 `Bun.serve`）與 `src/util/runtime.ts`（`readStdin`/`readTextFile`/`openUrl` 取代 `Bun.stdin`/`Bun.file`/`Bun.spawn`）；review/history server 改 async、cli.ts 對應加 `await`；transcript provider 改 `node:child_process`、github 整合改 node API。修正 0.5.0 在 node 下噴 `Bun is not defined` 的問題。
+
+### Fixed
+
+- `taskcli skill install` 文件更正：skill 內容已嵌進 CLI，npm 全域安裝後即可直接安裝，不再需要編譯後 binary。
 
 ## v0.5.0 - 2026-06-25 - Doctor & Slack integration
 
