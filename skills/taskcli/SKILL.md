@@ -1,84 +1,84 @@
 ---
 name: taskcli
-description: 用 taskcli 管理「本專案的開發實作任務」。當使用者用口語或文字描述一批要做的開發工作（功能/修 bug/重構/文件/測試/雜項）、要求整理成 task 清單、或要追蹤管理既有 task（列出/開始/完成/修改）時使用。透過 taskcli CLI 在該 repo 的 .taskcli/ 建立與管理 task。
+description: Manage "this project's development implementation tasks" with taskcli. Use when the user describes a batch of development work in natural language or text (feature/bug fix/refactor/docs/test/chore), asks to organize it into a task list, or wants to track and manage existing tasks (list/start/complete/edit). Creates and manages tasks under the repo's .taskcli/ via the taskcli CLI.
 ---
 
-# TaskCli — 用 CLI 管理本專案的開發任務
+# TaskCli — Manage this project's development tasks via CLI
 
-把使用者口語或文字描述的開發工作，整理成結構化 task，經使用者在本地 HTML 審閱頁確認後正式建立，並追蹤管理。
+Turn the user's spoken or written description of development work into structured tasks, formally create them after the user confirms in a local HTML review page, and track and manage them afterward.
 
-CLI 純存取、不碰 LLM：自然語言理解與分類由你（agent）完成，再呼叫 `taskcli`。所有讀取型指令一律加 `--json` 方便解析。
+The CLI is storage-only and never touches an LLM: natural-language understanding and classification are done by you (the agent), then you call `taskcli`. Always add `--json` to read-type commands for easy parsing.
 
-## 前置檢查
+## Preflight checks
 
-1. 確認 PATH 有 `taskcli`（`taskcli --help`）。若無，請使用者執行 `taskcli install-bin` 或先 `bun run build`。
-2. 確認當前 repo 有 `.taskcli/`。若沒有，先執行 `taskcli init`。
+1. Confirm `taskcli` is on PATH (`taskcli --help`). If not, ask the user to run `taskcli install-bin`, or `bun run build` first.
+2. Confirm the current repo has a `.taskcli/` directory. If not, run `taskcli init` first.
 
-## 步驟 1：把描述拆成 task items
+## Step 1: Break the description into task items
 
-把使用者的描述拆成獨立的開發 task，每項判斷：
+Split the user's description into independent development tasks. For each, decide:
 
-- `title`：一句話、動作導向（例：「實作登入 API」）。
-- `type`：對齊 git commit type — `feature`（新功能）/ `fix`（修 bug）/ `refactor`（重構）/ `docs`（文件）/ `test`（測試）/ `chore`（雜項）。
-- `priority`：`low` / `med`（預設）/ `high`。明顯緊急或擋路的給 `high`。
-- `tags`：選填，領域標籤（例：`auth`、`api`）。
+- `title`: a single, action-oriented sentence (e.g. "Implement login API").
+- `type`: aligned with git commit types — `feature` (new feature) / `fix` (bug fix) / `refactor` / `docs` / `test` / `chore` (miscellaneous).
+- `priority`: `low` / `med` (default) / `high`. Give `high` to anything clearly urgent or blocking.
+- `tags`: optional domain tags (e.g. `auth`, `api`).
 
-不確定 type/priority 時給合理預設即可，使用者會在審閱頁修改。
+When unsure about type/priority, use a reasonable default — the user can adjust it on the review page.
 
-## 步驟 2：建立 draft
+## Step 2: Create a draft
 
-把整理結果以 JSON 從 stdin 餵給 CLI：
+Feed the organized result to the CLI as JSON via stdin:
 
 ```bash
 echo '{
-  "source": "使用者的原始描述（保留供追溯）",
+  "source": "the user's original description (kept for traceability)",
   "items": [
-    { "title": "實作登入 API", "type": "feature", "priority": "med", "tags": ["auth"] },
-    { "title": "修復 email 驗證", "type": "fix", "priority": "high", "tags": ["auth"] }
+    { "title": "Implement login API", "type": "feature", "priority": "med", "tags": ["auth"] },
+    { "title": "Fix email verification", "type": "fix", "priority": "high", "tags": ["auth"] }
   ]
 }' | taskcli draft create --stdin
 ```
 
-輸出會給出 draft 編號（例：`D-001`）。
+The output gives a draft id (e.g. `D-001`).
 
-## 步驟 3：請使用者審閱（重要）
+## Step 3: Ask the user to review (important)
 
-`taskcli review` 會啟動本地審閱頁並**阻塞直到使用者按「送出」**（送出後 server 會自動關閉並退出；也可按 Ctrl+C 中止）。**不要由你在前景執行它**，否則會卡住等使用者操作。改為請使用者自行執行（在 Claude Code 可用 `!` 前綴在 session 內跑）：
+`taskcli review` launches a local review page and **blocks until the user clicks "Submit"** (the server auto-closes and exits after submission; can also be aborted with Ctrl+C). **Do not run it in the foreground yourself**, or you'll hang waiting for the user. Instead, ask the user to run it themselves (in Claude Code they can use the `!` prefix to run it within the session):
 
-> 請執行 `! taskcli review D-001 --open`，在開啟的頁面勾選要納入的項目、調整 type/priority/標題、增刪項目，按「送出」後回我說一聲。
+> Please run `! taskcli review D-001 --open`. On the page that opens, check the items to include, adjust type/priority/title, add or remove items, click "Submit", then let me know.
 
-等使用者確認送出後再繼續。
+Wait until the user confirms submission before continuing.
 
-## 步驟 4：finalize
+## Step 4: Finalize
 
 ```bash
 taskcli finalize D-001
 ```
 
-會把審閱頁勾選 include 的項目各生成一個正式 task（例：`T-001`、`T-002`）並刪除該 draft。向使用者回報生成的編號。
+This generates one formal task for each item marked "include" on the review page (e.g. `T-001`, `T-002`) and deletes that draft. Report the generated ids to the user.
 
-## 步驟 5：追蹤管理
+## Step 5: Track and manage
 
-| 使用者意圖 | 指令 |
-|------------|------|
-| 列出待辦 / 全部 | `taskcli list --json`（可加 `--status todo` `--type fix` `--priority high` `--tag auth`） |
-| 看單一 task | `taskcli show T-001 --json` |
-| 開始做 | `taskcli update T-001 --status in_progress` |
-| 完成 | `taskcli done T-001` |
-| 改欄位 | `taskcli update T-001 --title ... --priority high --add-tag x --rm-tag y` |
-| 設排程/負責人/估時/相依 | `taskcli update T-001 --due 2026-06-15 --assignee carl --estimate 3d --add-dep T-002`（`--rm-dep` 移除；scalar 給空字串可清除） |
-| 取消/刪除 | `taskcli rm T-001` |
+| User intent | Command |
+|-------------|---------|
+| List todo / all | `taskcli list --json` (optionally `--status todo` `--type fix` `--priority high` `--tag auth`) |
+| Show a single task | `taskcli show T-001 --json` |
+| Start working | `taskcli update T-001 --status in_progress` |
+| Complete | `taskcli done T-001` |
+| Edit fields | `taskcli update T-001 --title ... --priority high --add-tag x --rm-tag y` |
+| Set schedule/assignee/estimate/dependency | `taskcli update T-001 --due 2026-06-15 --assignee carl --estimate 3d --add-dep T-002` (`--rm-dep` to remove; pass an empty string to a scalar to clear it) |
+| Cancel/delete | `taskcli rm T-001` |
 
-## 從 GitHub Issues 匯入
+## Import from GitHub Issues
 
-當使用者想把 GitHub issue 轉成 task 時，請使用者執行 `taskcli import github`（或代為組指令）：
+When the user wants to turn GitHub issues into tasks, ask them to run `taskcli import github` (or assemble the command for them):
 
-- 預設匯入目前 repo 的 open issues；可加 `--repo owner/repo`、`--state all`、`--label bug`、`--limit 50`，或帶 `<n>` 只匯入單一 issue。
-- 建議先 `--dry-run` 預覽再實際匯入。
-- 以 `source: github:owner/repo#<n>` 辨識來源，重跑為更新而非重建（單向匯入，會以 issue 狀態覆寫本地 status）。
-- 匯入後照常用 `list` / `show` / `update` 追蹤。
+- By default imports the current repo's open issues; you can add `--repo owner/repo`, `--state all`, `--label bug`, `--limit 50`, or pass `<n>` to import a single issue.
+- Recommend a `--dry-run` preview before the real import.
+- Sources are identified by `source: github:owner/repo#<n>`, so re-running updates rather than recreates (one-way import; overwrites local status with the issue's status).
+- After importing, track them with `list` / `show` / `update` as usual.
 
-## 錯誤處理
+## Error handling
 
-- 「找不到 .taskcli」：請使用者先 `taskcli init`。
-- finalize 報「沒有 include 項目」：請使用者回審閱頁至少勾選一項再送出，或確認 draft 編號正確。
+- "Cannot find .taskcli": ask the user to run `taskcli init` first.
+- finalize reports "no included items": ask the user to go back to the review page, check at least one item, and submit again, or verify the draft id is correct.
