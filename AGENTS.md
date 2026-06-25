@@ -10,7 +10,7 @@
 
 ## 技術棧
 
-- **Runtime**：Bun（非 Node）。入口 `src/cli.ts` 以 `#!/usr/bin/env bun` 執行。
+- **Runtime**：開發以 Bun；發佈為 Node bundle。入口 `src/cli.ts` shebang 為 `#!/usr/bin/env node`；`bun build --target node` 產出 `dist/cli.js`，npm（`@carllee1983/taskcli`）的 `bin` 指向它，一般使用者用 Node（>= 20）執行。開發時走 `bun run src/cli.ts`（Bun 忽略 shebang）。
 - **語言**：TypeScript，`strict: true` + `noUncheckedIndexedAccess`。ESM（`"type": "module"`）。
 - **唯一執行期相依**：`@slack/bolt`（僅 `slack` 指令用到）。其餘走 Bun 內建 API（`Bun.file`、`Bun.spawn`、`Bun.serve`、`Bun.stdin`）。
 - **儲存格式**：task 為 Markdown + YAML frontmatter；history 為 append-only JSONL sidecar；設定為 JSON。
@@ -22,7 +22,8 @@ bun install              # 安裝相依
 bun run src/cli.ts <cmd> # 開發時直接跑 CLI（等同 bun run dev）
 bun test                 # 跑全部測試（test/ 對應 src/ 結構）
 bun test test/storage    # 跑單一目錄
-bun run build            # 編譯單一執行檔 dist/taskcli
+bun run build            # 產出 Node bundle dist/cli.js（npm 發佈用 bin）
+bun run compile          # 產出單一原生執行檔 dist/taskcli（install-bin 用）
 ```
 
 - 提交前一律 `bun test` 確認綠燈（test timeout 10s，見 `bunfig.toml`）。

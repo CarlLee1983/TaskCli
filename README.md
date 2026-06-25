@@ -4,11 +4,21 @@
 
 在任何 repo 的 `.taskcli/` 資料夾中，以「draft → 本地 HTML 審閱 → 正式 task」流程建立並追蹤 task 的 CLI 工具。CLI 純存取、不碰 LLM；自然語言整理交給 AI agent。
 
-## 安裝 / 編譯
+## 安裝
+
+從 npm 全域安裝（一般使用者，需 Node >= 20）：
+
+```bash
+npm i -g @carllee1983/taskcli
+taskcli --version
+```
+
+### 從原始碼編譯（開發者，需 Bun）
 
 ```bash
 bun install
-bun run build        # 產出單一執行檔 dist/taskcli
+bun run build        # 產出 Node bundle dist/cli.js（npm 發佈用 bin）
+bun run compile      # 產出單一原生執行檔 dist/taskcli（install-bin 用）
 ```
 
 開發時可直接 `bun run src/cli.ts <command>`。

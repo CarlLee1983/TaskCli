@@ -9,6 +9,11 @@
 - 新增 `taskcli merge <source> --into <target> [--json]`：合併重複 task——將指向來源的相依重接到目標、聯集來源的 `tags`/`depends_on`、於目標 history 記一筆 note，再刪除來源與其 sidecar；會拒絕造成循環相依的合併。
 - `skills/taskcli/SKILL.md` 新增「建立前語意防重」步驟與「事後合併重複」清理指引。
 
+### Changed
+
+- **準備 npm 發佈**：套件改名為 scoped `@carllee1983/taskcli` 並移除 `private`；`bin` 改指向 `bun build --target node` 產出的 Node bundle `dist/cli.js`（`src/cli.ts` shebang 改為 `#!/usr/bin/env node`），一般使用者可用 Node（>= 20）`npm i -g` 安裝。
+- `package.json` 補 `description`/`repository`/`homepage`/`bugs`/`keywords`/`author`/`engines`/`publishConfig`，`files` 白名單收斂至 `dist/cli.js` 與文件（tarball 由 163 檔降至 5 檔）；新增 `build`（node bundle）、`compile`（原生 binary）、`prepublishOnly` scripts。
+
 ## v0.5.0 - 2026-06-25 - Doctor & Slack integration
 
 ### Added
