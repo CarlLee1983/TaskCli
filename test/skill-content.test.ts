@@ -26,3 +26,9 @@ test("SKILL.md 說明 review 由使用者執行（避免 agent 前景阻塞）",
   expect(body).toMatch(/Do not run it in the foreground/i);
   expect(body).toMatch(/ask the user to run it/i);
 });
+
+test("SKILL.md 含建立前防重與 merge 清理指引", () => {
+  const body = md();
+  expect(body).toMatch(/Check for duplicates/i);
+  expect(body).toMatch(/taskcli merge/);
+});

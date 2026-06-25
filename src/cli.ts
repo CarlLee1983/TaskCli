@@ -12,6 +12,7 @@ import { runInstallBin } from "./commands/installBin";
 import { runImport } from "./commands/import";
 import { runDoctor } from "./commands/doctor";
 import { runSlack } from "./commands/slack";
+import { runMerge } from "./commands/merge";
 import { runHistoryAdd, runHistoryList } from "./commands/history";
 import {
   runTranscriptAdd,
@@ -40,6 +41,7 @@ const USAGE = `usage: taskcli <command> [options]
   done <id>                           標記完成
   next [--limit n --json]             顯示下一個可執行 task
   rm <id>                             刪除 task
+  merge <source> --into <target> [--json]      合併重複 task（重接相依後刪除來源）
   history add <task-id> --type <type> [--title --body --body-file --author]   追加 task 歷程
   history list <task-id> [--json]       列出 task 歷程
   history view <task-id> [--port n] [--open]   啟動只讀歷程頁
@@ -253,6 +255,22 @@ async function main(): Promise<void> {
         const id = positionals[0];
         if (!id) fail("rm 需要 <id>");
         process.stdout.write(`${runRm(requireRoot(cwd), id)}\n`);
+        return;
+      }
+      case "merge": {
+        const { values, positionals } = parseArgs({
+          args: rest,
+          options: { into: { type: "string" }, json: { type: "boolean" } },
+          allowPositionals: true,
+        });
+        const source = positionals[0];
+        if (!source) fail("merge 需要 <source-id>");
+        if (!values.into) fail("merge 需要 --into <target-id>");
+        process.stdout.write(`${runMerge(requireRoot(cwd), {
+          source,
+          target: values.into,
+          json: values.json,
+        })}\n`);
         return;
       }
       case "history": {

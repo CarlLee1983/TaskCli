@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- 新增 `taskcli merge <source> --into <target> [--json]`：合併重複 task——將指向來源的相依重接到目標、聯集來源的 `tags`/`depends_on`、於目標 history 記一筆 note，再刪除來源與其 sidecar；會拒絕造成循環相依的合併。
+- `skills/taskcli/SKILL.md` 新增「建立前語意防重」步驟與「事後合併重複」清理指引。
+
 ## v0.5.0 - 2026-06-25 - Doctor & Slack integration
 
 ### Added

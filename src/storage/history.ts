@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, readFileSync, readdirSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { historyDir } from "./paths";
 import { ensureDir } from "./io";
@@ -53,4 +53,9 @@ export function appendHistoryEvent(root: string, event: TaskHistoryEvent, taskId
   const p = historyPath(root, taskId);
   ensureDir(historyDir(root));
   appendFileSync(p, `${JSON.stringify(parsed)}\n`, "utf8");
+}
+
+export function deleteHistory(root: string, taskId: string): void {
+  const p = historyPath(root, taskId);
+  if (existsSync(p)) rmSync(p);
 }
