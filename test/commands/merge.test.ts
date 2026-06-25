@@ -131,3 +131,21 @@ test("--json 輸出 target/deleted/repointed", () => {
   const out = runMerge(root, { source: "T-002", target: "T-001", json: true, now: NOW });
   expect(JSON.parse(out)).toEqual({ target: "T-001", deleted: "T-002", repointed: ["T-003"] });
 });
+
+const CLI = join(import.meta.dir, "..", "..", "src", "cli.ts");
+
+test("CLI merge 透過 --into 合併並回報", () => {
+  const root = setup();
+  writeTask(root, mkTask({ id: "T-001", title: "keeper" }));
+  writeTask(root, mkTask({ id: "T-002", title: "dup" }));
+  const r = Bun.spawnSync(["bun", CLI, "merge", "T-002", "--into", "T-001"], { cwd: root });
+  expect(r.exitCode).toBe(0);
+  expect(r.stdout.toString()).toContain("已將 T-002 併入 T-001");
+});
+
+test("CLI merge 缺 --into 報錯 exit 1", () => {
+  const root = setup();
+  writeTask(root, mkTask({ id: "T-001", title: "x" }));
+  const r = Bun.spawnSync(["bun", CLI, "merge", "T-001"], { cwd: root });
+  expect(r.exitCode).toBe(1);
+});
